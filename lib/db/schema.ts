@@ -1,0 +1,181 @@
+import {
+  pgTable,
+  pgEnum,
+  uuid,
+  text,
+  integer,
+  numeric,
+  boolean,
+  timestamp,
+  jsonb,
+  unique,
+} from "drizzle-orm/pg-core";
+
+// A lift's role determines how its weight is calculated during a session:
+// main -> weekly wave % of TM, assistance -> flat % of TM (5x10), accessory -> no TM, freeform.
+export const liftRoleEnum = pgEnum("lift_role", ["main", "assistance", "accessory"]);
+
+// Determines training-max bump at cycle end: lower body +10 lb, upper body +5 lb. Null for accessories.
+export const bodyRegionEnum = pgEnum("body_region", ["upper", "lower"]);
+
+export const cycleStatusEnum = pgEnum("cycle_status", ["active", "completed"]);
+
+export const sessionStatusEnum = pgEnum("session_status", [
+  "pending",
+  "in_progress",
+  "completed",
+]);
+
+export const setTypeEnum = pgEnum("set_type", [
+  "warmup",
+  "main",
+  "assistance",
+  "accessory",
+]);
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// The 4 fixed training days. Rarely changes, but kept as real rows so `lifts`
+// can join on a label instead of a bare int.
+export const programDays = pgTable(
+  "program_days",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    dayNumber: integer("day_number").notNull(),
+    name: text("name").notNull(),
+  },
+  (table) => [unique().on(table.userId, table.dayNumber)]
+);
+
+// The 13 lifts: 4 main, 4 assistance, 5 accessory. currentTrainingMax is a
+// denormalized "latest" cache that pre-fills the next cycle-setup screen;
+// the authoritative per-cycle value lives in cycleLiftTms.
+export const lifts = pgTable(
+  "lifts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    programDayId: uuid("program_day_id")
+      .notNull()
+      .references(() => programDays.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    role: liftRoleEnum("role").notNull(),
+    bodyRegion: bodyRegionEnum("body_region"),
+    orderInDay: integer("order_in_day").notNull(),
+    currentTrainingMax: numeric("current_training_max", { precision: 6, scale: 2 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique().on(table.userId, table.slug)]
+);
+
+// One row per 3-week training cycle. mainWaveConfig / warmupSchemeConfig are
+// shared across all main lifts that cycle (fixed shape: 3 weeks x 3 sets),
+// editable at cycle setup with defaults from lib/constants.ts.
+export const cycles = pgTable(
+  "cycles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    cycleNumber: integer("cycle_number").notNull(),
+    status: cycleStatusEnum("status").notNull().default("active"),
+    mainWaveConfig: jsonb("main_wave_config").notNull(),
+    warmupSchemeConfig: jsonb("warmup_scheme_config").notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [unique().on(table.userId, table.cycleNumber)]
+);
+
+// Training max locked in at the start of each cycle, plus the suggested/
+// confirmed new value at cycle-complete. This table doubles as TM history --
+// no separate audit log needed since cycles are strictly ordered.
+export const cycleLiftTms = pgTable(
+  "cycle_lift_tms",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    cycleId: uuid("cycle_id")
+      .notNull()
+      .references(() => cycles.id, { onDelete: "cascade" }),
+    liftId: uuid("lift_id")
+      .notNull()
+      .references(() => lifts.id, { onDelete: "cascade" }),
+    startingTm: numeric("starting_tm", { precision: 6, scale: 2 }).notNull(),
+    endingTm: numeric("ending_tm", { precision: 6, scale: 2 }),
+  },
+  (table) => [unique().on(table.cycleId, table.liftId)]
+);
+
+// Per-assistance-lift percentage of TM, set independently per lift at cycle
+// setup (e.g. Deadlift assistance at 50%, OHP assistance at 55%).
+export const cycleAssistanceConfig = pgTable(
+  "cycle_assistance_config",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    cycleId: uuid("cycle_id")
+      .notNull()
+      .references(() => cycles.id, { onDelete: "cascade" }),
+    liftId: uuid("lift_id")
+      .notNull()
+      .references(() => lifts.id, { onDelete: "cascade" }),
+    percentageOfTm: numeric("percentage_of_tm", { precision: 5, scale: 2 }).notNull(),
+  },
+  (table) => [unique().on(table.cycleId, table.liftId)]
+);
+
+// The 12 ordered workout slots per cycle (4 days x 3 weeks). sequenceIndex
+// drives "next workout" -- purely sequential, no calendar involved.
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    cycleId: uuid("cycle_id")
+      .notNull()
+      .references(() => cycles.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    dayNumber: integer("day_number").notNull(),
+    weekNumber: integer("week_number").notNull(),
+    sequenceIndex: integer("sequence_index").notNull(),
+    status: sessionStatusEnum("status").notNull().default("pending"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => [unique().on(table.cycleId, table.sequenceIndex)]
+);
+
+// Materialized upfront for all 12 sessions at cycle-creation time. Every set
+// has a stable id to check off/edit, and "resume where I left off" is just
+// `WHERE completed_at IS NULL`. target* is null for accessory sets (freeform).
+export const sets = pgTable("sets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sessionId: uuid("session_id")
+    .notNull()
+    .references(() => sessions.id, { onDelete: "cascade" }),
+  liftId: uuid("lift_id")
+    .notNull()
+    .references(() => lifts.id, { onDelete: "cascade" }),
+  setType: setTypeEnum("set_type").notNull(),
+  orderIndex: integer("order_index").notNull(),
+  isAmrap: boolean("is_amrap").notNull().default(false),
+  targetWeight: numeric("target_weight", { precision: 6, scale: 2 }),
+  targetReps: integer("target_reps"),
+  actualWeight: numeric("actual_weight", { precision: 6, scale: 2 }),
+  actualReps: integer("actual_reps"),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
