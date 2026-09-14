@@ -10,6 +10,7 @@ export async function getLiftsForUser(userId: string) {
       name: lifts.name,
       role: lifts.role,
       bodyRegion: lifts.bodyRegion,
+      equipmentType: lifts.equipmentType,
       orderInDay: lifts.orderInDay,
       currentTrainingMax: lifts.currentTrainingMax,
       dayNumber: programDays.dayNumber,

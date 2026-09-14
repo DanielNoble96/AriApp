@@ -1,4 +1,5 @@
-const DEFAULT_BAR_WEIGHT = 45;
+import { DEFAULT_BAR_WEIGHT } from "./constants";
+
 const DEFAULT_PLATE_SIZES = [45, 25, 10, 5, 2.5];
 
 export interface PlateBreakdown {

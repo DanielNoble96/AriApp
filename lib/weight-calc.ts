@@ -1,3 +1,5 @@
+import { DEFAULT_BAR_WEIGHT } from "./constants";
+
 /**
  * Rounds to the nearest 5 lb by default -- the smallest jump loadable with a
  * standard 45 lb bar and standard plate pairs (45/25/10/5/2.5 lb per side,
@@ -7,12 +9,18 @@ export function roundToIncrement(weight: number, increment: number = 5): number 
   return Math.round(weight / increment) * increment;
 }
 
+/**
+ * `minWeight` floors the result -- for a barbell exercise, a set should
+ * never be calculated below the bar's own empty weight, since you can't
+ * physically load a bar to less than that.
+ */
 export function calcTargetWeight(
   trainingMax: number,
   percentage: number,
-  increment: number = 5
+  increment: number = 5,
+  minWeight: number = 0
 ): number {
-  return roundToIncrement(trainingMax * (percentage / 100), increment);
+  return Math.max(minWeight, roundToIncrement(trainingMax * (percentage / 100), increment));
 }
 
 export interface WaveSet {
@@ -42,12 +50,13 @@ export interface SetPlanRow {
 export function generateWarmupSets(
   trainingMax: number,
   scheme: WaveWeek,
-  increment: number = 5
+  increment: number = 5,
+  minWeight: number = 0
 ): SetPlanRow[] {
   return scheme.map((set, index) => ({
     setType: "warmup",
     orderIndex: index,
-    targetWeight: calcTargetWeight(trainingMax, set.percentage, increment),
+    targetWeight: calcTargetWeight(trainingMax, set.percentage, increment, minWeight),
     targetReps: set.reps,
     isAmrap: false,
   }));
@@ -56,12 +65,13 @@ export function generateWarmupSets(
 export function generateMainSets(
   trainingMax: number,
   weekScheme: WaveWeek,
-  increment: number = 5
+  increment: number = 5,
+  minWeight: number = 0
 ): SetPlanRow[] {
   return weekScheme.map((set, index) => ({
     setType: "main",
     orderIndex: index,
-    targetWeight: calcTargetWeight(trainingMax, set.percentage, increment),
+    targetWeight: calcTargetWeight(trainingMax, set.percentage, increment, minWeight),
     targetReps: set.reps,
     isAmrap: Boolean(set.amrap),
   }));
@@ -73,9 +83,10 @@ export function generateAssistanceSets(
   percentage: number,
   sets: number = 5,
   reps: number = 10,
-  increment: number = 5
+  increment: number = 5,
+  minWeight: number = 0
 ): SetPlanRow[] {
-  const targetWeight = calcTargetWeight(trainingMax, percentage, increment);
+  const targetWeight = calcTargetWeight(trainingMax, percentage, increment, minWeight);
   return Array.from({ length: sets }, (_, index) => ({
     setType: "assistance",
     orderIndex: index,
@@ -100,6 +111,8 @@ export interface SessionLiftInput {
   liftId: string;
   role: "main" | "assistance" | "accessory";
   trainingMax: number | null;
+  /** "barbell" floors calculated weights at DEFAULT_BAR_WEIGHT; other types have no floor. */
+  equipmentType: "barbell" | "dumbbell" | "machine" | null;
 }
 
 export interface BuildSessionSetPlanParams {
@@ -129,14 +142,16 @@ export function buildSessionSetPlan(
   let order = 0;
 
   for (const lift of dayLifts) {
+    const minWeight = lift.equipmentType === "barbell" ? DEFAULT_BAR_WEIGHT : 0;
+
     if (lift.role === "main") {
       if (lift.trainingMax == null) {
         throw new Error(`Main lift ${lift.liftId} is missing a training max`);
       }
-      for (const row of generateWarmupSets(lift.trainingMax, warmupScheme, increment)) {
+      for (const row of generateWarmupSets(lift.trainingMax, warmupScheme, increment, minWeight)) {
         rows.push({ ...row, liftId: lift.liftId, orderIndex: order++ });
       }
-      for (const row of generateMainSets(lift.trainingMax, weekScheme, increment)) {
+      for (const row of generateMainSets(lift.trainingMax, weekScheme, increment, minWeight)) {
         rows.push({ ...row, liftId: lift.liftId, orderIndex: order++ });
       }
     } else if (lift.role === "assistance") {
@@ -147,7 +162,14 @@ export function buildSessionSetPlan(
       if (percentage == null) {
         throw new Error(`Assistance lift ${lift.liftId} is missing a configured percentage`);
       }
-      for (const row of generateAssistanceSets(lift.trainingMax, percentage, 5, 10, increment)) {
+      for (const row of generateAssistanceSets(
+        lift.trainingMax,
+        percentage,
+        5,
+        10,
+        increment,
+        minWeight
+      )) {
         rows.push({ ...row, liftId: lift.liftId, orderIndex: order++ });
       }
     } else {
@@ -158,22 +180,4 @@ export function buildSessionSetPlan(
   }
 
   return rows;
-}
-
-/**
- * Display-only: weight to add/remove before each next set, in session order.
- * Null where there's no previous known weight to diff against (the first
- * set, and any set right after a freeform accessory with no target).
- */
-export function computeWeightDeltas(sets: { targetWeight: number | null }[]): (number | null)[] {
-  let previous: number | null = null;
-  return sets.map((set) => {
-    if (set.targetWeight == null) {
-      previous = null;
-      return null;
-    }
-    const delta = previous == null ? null : set.targetWeight - previous;
-    previous = set.targetWeight;
-    return delta;
-  });
 }

@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { completeSet } from "@/actions/sets";
 import { resetSession } from "@/actions/sessions";
-import { computeWeightDeltas } from "@/lib/weight-calc";
 import { calcPlateBreakdown, formatPlateBreakdown } from "@/lib/plates";
 import { BUTTON_CLASS } from "@/lib/ui";
 
@@ -71,10 +70,6 @@ export function SessionClient({
       setEditingId(null);
     });
   }
-
-  const deltas = computeWeightDeltas(
-    rows.map((r) => ({ targetWeight: r.targetWeight != null ? Number(r.targetWeight) : null }))
-  );
 
   function draftFor(row: SetRow) {
     const existing = drafts[row.id];
@@ -149,7 +144,7 @@ export function SessionClient({
           {resetError && <p className="text-xs text-red-600">{resetError}</p>}
         </div>
       )}
-      {rows.map((row, i) => {
+      {rows.map((row) => {
         const groupKey = `${row.liftId}:${row.setType}`;
         const showHeader = groupKey !== lastGroupKey;
         lastGroupKey = groupKey;
@@ -157,7 +152,6 @@ export function SessionClient({
         const isDone = row.completedAt != null;
         const isEditing = editingId === row.id || !isDone;
         const draft = draftFor(row);
-        const delta = deltas[i];
 
         return (
           <div key={row.id}>
@@ -176,12 +170,6 @@ export function SessionClient({
                       {fmt(row.targetWeight)} lb{row.equipmentType === "dumbbell" ? " (each)" : ""} ×{" "}
                       {row.targetReps}
                       {row.isAmrap ? "+" : ""}
-                      {delta != null && delta !== 0 && (
-                        <span className="ml-2 text-xs opacity-60">
-                          ({delta > 0 ? "+" : ""}
-                          {delta})
-                        </span>
-                      )}
                     </span>
                     {row.equipmentType === "barbell" &&
                       (() => {

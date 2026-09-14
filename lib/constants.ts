@@ -2,6 +2,11 @@ import type { MainWaveConfig, WaveWeek } from "./weight-calc";
 
 export const ROUND_INCREMENT = 5;
 
+// A standard barbell's own weight -- no barbell set should ever be
+// calculated below this, since you physically can't load a bar to less
+// than what it weighs empty.
+export const DEFAULT_BAR_WEIGHT = 45;
+
 // Classic 5/3/1 wave. Editable per-cycle at setup; these are just the
 // pre-filled defaults.
 export const DEFAULT_MAIN_WAVE: MainWaveConfig = {

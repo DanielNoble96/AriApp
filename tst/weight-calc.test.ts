@@ -7,7 +7,6 @@ import {
   generateAssistanceSets,
   generateAccessoryPlaceholders,
   buildSessionSetPlan,
-  computeWeightDeltas,
   type MainWaveConfig,
   type WaveWeek,
 } from "../lib/weight-calc";
@@ -69,6 +68,15 @@ describe("calcTargetWeight", () => {
   it("handles 0% as 0", () => {
     expect(calcTargetWeight(225, 0)).toBe(0);
   });
+
+  it("floors at minWeight for a light warmup on a low training max", () => {
+    // 40% of 105 = 42 -> rounds to 40, but a barbell can't go below 45
+    expect(calcTargetWeight(105, 40, 5, 45)).toBe(45);
+  });
+
+  it("leaves a weight above minWeight unaffected", () => {
+    expect(calcTargetWeight(225, 85, 5, 45)).toBe(190);
+  });
 });
 
 describe("generateWarmupSets", () => {
@@ -85,6 +93,13 @@ describe("generateWarmupSets", () => {
     const rows = generateWarmupSets(200, WARMUP);
     // 40%, 50%, 60% of 200 = 80, 100, 120 -- all exact multiples of 5
     expect(rows.map((r) => r.targetWeight)).toEqual([80, 100, 120]);
+  });
+
+  it("floors light warmups at minWeight instead of going below an empty bar", () => {
+    // 40% of 105 = 42 -> rounds to 40, which is below a 45 lb bar -> floored to 45
+    const rows = generateWarmupSets(105, WARMUP, 5, 45);
+    expect(rows[0].targetWeight).toBe(45);
+    expect(rows.every((r) => r.targetWeight! >= 45)).toBe(true);
   });
 });
 
@@ -145,9 +160,9 @@ describe("buildSessionSetPlan", () => {
   it("orders warmup -> main -> assistance -> accessory across the whole day", () => {
     const plan = buildSessionSetPlan({
       dayLifts: [
-        { liftId: "squat", role: "main", trainingMax: 225 },
-        { liftId: "deadlift", role: "assistance", trainingMax: 315 },
-        { liftId: "calf-raise", role: "accessory", trainingMax: null },
+        { liftId: "squat", role: "main", trainingMax: 225, equipmentType: "barbell" },
+        { liftId: "deadlift", role: "assistance", trainingMax: 315, equipmentType: "barbell" },
+        { liftId: "calf-raise", role: "accessory", trainingMax: null, equipmentType: null },
       ],
       weekNumber: 1,
       mainWaveConfig: MAIN_WAVE,
@@ -167,10 +182,36 @@ describe("buildSessionSetPlan", () => {
     );
   });
 
+  it("floors barbell warmups at 45 lb for a low training max", () => {
+    const plan = buildSessionSetPlan({
+      dayLifts: [{ liftId: "squat", role: "main", trainingMax: 105, equipmentType: "barbell" }],
+      weekNumber: 1,
+      mainWaveConfig: MAIN_WAVE,
+      warmupScheme: WARMUP,
+      assistancePercentages: {},
+    });
+    const warmups = plan.filter((r) => r.setType === "warmup");
+    expect(warmups.every((r) => r.targetWeight! >= 45)).toBe(true);
+  });
+
+  it("does not floor a dumbbell lift's weight at the barbell minimum", () => {
+    const plan = buildSessionSetPlan({
+      dayLifts: [
+        { liftId: "single-leg-rdl", role: "assistance", trainingMax: 40, equipmentType: "dumbbell" },
+      ],
+      weekNumber: 1,
+      mainWaveConfig: MAIN_WAVE,
+      warmupScheme: WARMUP,
+      assistancePercentages: { "single-leg-rdl": 50 },
+    });
+    // 50% of 40 = 20, well below 45 -- fine for a dumbbell, no floor should apply
+    expect(plan[0].targetWeight).toBe(20);
+  });
+
   it("throws if a main lift is missing a training max", () => {
     expect(() =>
       buildSessionSetPlan({
-        dayLifts: [{ liftId: "squat", role: "main", trainingMax: null }],
+        dayLifts: [{ liftId: "squat", role: "main", trainingMax: null, equipmentType: "barbell" }],
         weekNumber: 1,
         mainWaveConfig: MAIN_WAVE,
         warmupScheme: WARMUP,
@@ -182,37 +223,14 @@ describe("buildSessionSetPlan", () => {
   it("throws if an assistance lift has no configured percentage", () => {
     expect(() =>
       buildSessionSetPlan({
-        dayLifts: [{ liftId: "deadlift", role: "assistance", trainingMax: 315 }],
+        dayLifts: [
+          { liftId: "deadlift", role: "assistance", trainingMax: 315, equipmentType: "barbell" },
+        ],
         weekNumber: 1,
         mainWaveConfig: MAIN_WAVE,
         warmupScheme: WARMUP,
         assistancePercentages: {},
       })
     ).toThrow(/missing a configured percentage/);
-  });
-});
-
-describe("computeWeightDeltas", () => {
-  it("returns null for the first set, then diffs against the previous", () => {
-    const deltas = computeWeightDeltas([
-      { targetWeight: 145 },
-      { targetWeight: 170 },
-      { targetWeight: 190 },
-    ]);
-    expect(deltas).toEqual([null, 25, 20]);
-  });
-
-  it("carries the delta across a warmup -> main boundary", () => {
-    const deltas = computeWeightDeltas([{ targetWeight: 120 }, { targetWeight: 145 }]);
-    expect(deltas).toEqual([null, 25]);
-  });
-
-  it("resets to null across a freeform accessory set with no target", () => {
-    const deltas = computeWeightDeltas([
-      { targetWeight: 100 },
-      { targetWeight: null },
-      { targetWeight: 50 },
-    ]);
-    expect(deltas).toEqual([null, null, null]);
   });
 });

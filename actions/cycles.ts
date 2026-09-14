@@ -123,6 +123,7 @@ export async function createCycle(input: CreateCycleInput) {
           liftId: l.id,
           role: l.role,
           trainingMax: l.role === "accessory" ? null : input.trainingMaxes[l.id],
+          equipmentType: l.equipmentType,
         }));
 
         const plan = buildSessionSetPlan({
