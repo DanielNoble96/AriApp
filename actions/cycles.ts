@@ -3,7 +3,8 @@
 import { eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { cycles, cycleLiftTms, cycleAssistanceConfig, sessions, sets, lifts } from "@/lib/db/schema";
-import { getCurrentUser, getLiftsForUser } from "@/lib/db/queries";
+import { getLiftsForUser } from "@/lib/db/queries";
+import { getSessionUser } from "@/lib/auth";
 import {
   buildSessionSetPlan,
   type MainWaveConfig,
@@ -21,7 +22,9 @@ export interface CreateCycleInput {
 }
 
 export async function createCycle(input: CreateCycleInput) {
-  const user = await getCurrentUser();
+  const user = await getSessionUser();
+  if (!user) throw new Error("Not signed in.");
+
   const allLifts = await getLiftsForUser(user.id);
 
   const trackedLifts = allLifts.filter((l) => l.role === "main" || l.role === "assistance");

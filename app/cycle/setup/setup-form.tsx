@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createCycle } from "@/actions/cycles";
 import type { MainWaveConfig, WaveWeek } from "@/lib/weight-calc";
+import { BUTTON_CLASS } from "@/lib/ui";
 
 interface LiftInfo {
   id: string;
@@ -230,7 +231,7 @@ export function SetupForm({
       <button
         type="submit"
         disabled={isPending}
-        className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-md bg-black py-4 text-center font-semibold text-white disabled:opacity-50"
+        className={`fixed inset-x-0 bottom-0 mx-auto w-full max-w-md py-4 text-center ${BUTTON_CLASS}`}
       >
         {isPending ? "Starting..." : "Start Cycle"}
       </button>

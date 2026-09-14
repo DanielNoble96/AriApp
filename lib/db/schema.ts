@@ -37,6 +37,20 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   name: text("name"),
+  // Null until the account is claimed with a password (see the signup
+  // "claim" flow for the originally-seeded single-user account).
+  passwordHash: text("password_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Auth sessions -- deliberately NOT named `sessions`, since that table name
+// is already taken by workout sessions. `id` is the random token itself.
+export const userSessions = pgTable("user_sessions", {
+  id: text("id").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AriApp",
+  title: "Pretty Heavy",
   description: "5/3/1 training tracker",
 };
 

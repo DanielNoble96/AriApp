@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { getCurrentUser, getActiveCycle, getSessionsForCycle } from "@/lib/db/queries";
+import { redirect } from "next/navigation";
+import { getActiveCycle, getSessionsForCycle } from "@/lib/db/queries";
+import { getSessionUser } from "@/lib/auth";
+import { logout } from "@/actions/auth";
 
 // This page reads live DB state (active cycle, session progress) and has no
 // request-time API of its own, so without this it could get statically
@@ -13,7 +16,9 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default async function Home() {
-  const user = await getCurrentUser();
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+
   const activeCycle = await getActiveCycle(user.id);
   const cycleSessions = activeCycle ? await getSessionsForCycle(activeCycle.id) : [];
   const completedCount = cycleSessions.filter((s) => s.status === "completed").length;
@@ -21,10 +26,17 @@ export default async function Home() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">AriApp</h1>
-        <Link href="/cycle/setup" className="text-sm font-semibold opacity-70">
-          New Cycle
-        </Link>
+        <h1 className="text-2xl font-bold">Pretty Heavy</h1>
+        <div className="flex items-center gap-4">
+          <Link href="/cycle/setup" className="text-sm font-semibold opacity-70">
+            New Cycle
+          </Link>
+          <form action={logout}>
+            <button type="submit" className="text-sm font-semibold opacity-70">
+              Log Out
+            </button>
+          </form>
+        </div>
       </div>
 
       {!activeCycle ? (

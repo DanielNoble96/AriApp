@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getSessionById, getSetsForSession } from "@/lib/db/queries";
+import { getSessionUser } from "@/lib/auth";
 import { SessionClient } from "./session-client";
 
 // Reads live set/session state -- must not be statically prerendered.
@@ -11,9 +12,13 @@ export default async function SessionPage({
 }: {
   params: Promise<{ sessionId: string }>;
 }) {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+
   const { sessionId } = await params;
   const session = await getSessionById(sessionId);
   if (!session) notFound();
+  if (session.userId !== user.id) notFound();
 
   const sessionSets = await getSetsForSession(sessionId);
 

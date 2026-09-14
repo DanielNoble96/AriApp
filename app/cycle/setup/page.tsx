@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { getCurrentUser, getLiftsForUser } from "@/lib/db/queries";
+import { redirect } from "next/navigation";
+import { getLiftsForUser } from "@/lib/db/queries";
+import { getSessionUser } from "@/lib/auth";
 import {
   DEFAULT_MAIN_WAVE,
   DEFAULT_WARMUP_SCHEME,
@@ -12,7 +14,9 @@ import { SetupForm } from "./setup-form";
 export const dynamic = "force-dynamic";
 
 export default async function CycleSetupPage() {
-  const user = await getCurrentUser();
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+
   const lifts = await getLiftsForUser(user.id);
 
   return (

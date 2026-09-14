@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { completeSet } from "@/actions/sets";
 import { resetSession } from "@/actions/sessions";
 import { computeWeightDeltas } from "@/lib/weight-calc";
+import { BUTTON_CLASS } from "@/lib/ui";
 
 interface SetRow {
   id: string;
@@ -205,7 +206,7 @@ export function SessionClient({
                     type="button"
                     disabled={isPending}
                     onClick={() => handleDone(row)}
-                    className="rounded bg-black px-3 py-1 text-sm font-semibold text-white disabled:opacity-50"
+                    className={`px-3 py-1 text-sm ${BUTTON_CLASS}`}
                   >
                     Done
                   </button>

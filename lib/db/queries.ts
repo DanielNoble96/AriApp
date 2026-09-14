@@ -1,13 +1,6 @@
 import { eq, and, asc } from "drizzle-orm";
 import { db } from "./index";
-import { users, lifts, programDays, cycles, sessions, sets } from "./schema";
-
-// Single-user app for now -- there's only ever one row to grab.
-export async function getCurrentUser() {
-  const [user] = await db.select().from(users).limit(1);
-  if (!user) throw new Error("No seeded user found -- run `npm run db:seed`");
-  return user;
-}
+import { lifts, programDays, cycles, sessions, sets } from "./schema";
 
 export async function getLiftsForUser(userId: string) {
   return db
