@@ -69,6 +69,7 @@ export async function getSetsForSession(sessionId: string) {
       liftId: sets.liftId,
       liftName: lifts.name,
       liftRole: lifts.role,
+      equipmentType: lifts.equipmentType,
       setType: sets.setType,
       orderIndex: sets.orderIndex,
       isAmrap: sets.isAmrap,

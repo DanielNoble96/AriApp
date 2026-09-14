@@ -18,6 +18,11 @@ export const liftRoleEnum = pgEnum("lift_role", ["main", "assistance", "accessor
 // Determines training-max bump at cycle end: lower body +10 lb, upper body +5 lb. Null for accessories.
 export const bodyRegionEnum = pgEnum("body_region", ["upper", "lower"]);
 
+// Determines how a set's target weight is displayed: barbell -> plate-loading
+// breakdown, dumbbell -> per-dumbbell weight, machine -> just the number.
+// Null for accessories (no calculated weight to display in the first place).
+export const equipmentTypeEnum = pgEnum("equipment_type", ["barbell", "dumbbell", "machine"]);
+
 export const cycleStatusEnum = pgEnum("cycle_status", ["active", "completed"]);
 
 export const sessionStatusEnum = pgEnum("session_status", [
@@ -86,6 +91,7 @@ export const lifts = pgTable(
     name: text("name").notNull(),
     role: liftRoleEnum("role").notNull(),
     bodyRegion: bodyRegionEnum("body_region"),
+    equipmentType: equipmentTypeEnum("equipment_type"),
     orderInDay: integer("order_in_day").notNull(),
     currentTrainingMax: numeric("current_training_max", { precision: 6, scale: 2 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

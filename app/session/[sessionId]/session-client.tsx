@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { completeSet } from "@/actions/sets";
 import { resetSession } from "@/actions/sessions";
 import { computeWeightDeltas } from "@/lib/weight-calc";
+import { calcPlateBreakdown, formatPlateBreakdown } from "@/lib/plates";
 import { BUTTON_CLASS } from "@/lib/ui";
 
 interface SetRow {
@@ -11,6 +12,7 @@ interface SetRow {
   liftId: string;
   liftName: string;
   liftRole: "main" | "assistance" | "accessory";
+  equipmentType: "barbell" | "dumbbell" | "machine" | null;
   setType: "warmup" | "main" | "assistance" | "accessory";
   orderIndex: number;
   isAmrap: boolean;
@@ -169,16 +171,30 @@ export function SessionClient({
             >
               <div className="text-sm">
                 {row.targetWeight != null ? (
-                  <span>
-                    {fmt(row.targetWeight)} lb × {row.targetReps}
-                    {row.isAmrap ? "+" : ""}
-                    {delta != null && delta !== 0 && (
-                      <span className="ml-2 text-xs opacity-60">
-                        ({delta > 0 ? "+" : ""}
-                        {delta})
-                      </span>
-                    )}
-                  </span>
+                  <>
+                    <span>
+                      {fmt(row.targetWeight)} lb{row.equipmentType === "dumbbell" ? " (each)" : ""} ×{" "}
+                      {row.targetReps}
+                      {row.isAmrap ? "+" : ""}
+                      {delta != null && delta !== 0 && (
+                        <span className="ml-2 text-xs opacity-60">
+                          ({delta > 0 ? "+" : ""}
+                          {delta})
+                        </span>
+                      )}
+                    </span>
+                    {row.equipmentType === "barbell" &&
+                      (() => {
+                        const breakdown = calcPlateBreakdown(Number(row.targetWeight));
+                        return (
+                          <div className="text-xs opacity-60">
+                            {breakdown.belowBarWeight
+                              ? "Below an empty bar (45 lb) -- use just the bar"
+                              : `${formatPlateBreakdown(breakdown.perSide)} / side`}
+                          </div>
+                        );
+                      })()}
+                  </>
                 ) : (
                   <span className="opacity-60">Freeform — log your own weight &amp; reps</span>
                 )}
