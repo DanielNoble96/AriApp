@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { completeSet } from "@/actions/sets";
-import { resetSession } from "@/actions/sessions";
+import { resetSession, completeSession } from "@/actions/sessions";
 import { calcPlateBreakdown, formatPlateBreakdown } from "@/lib/plates";
 import { BUTTON_CLASS } from "@/lib/ui";
 
@@ -35,21 +36,111 @@ function fmt(value: string | null): string {
   return String(Number(value));
 }
 
+function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+/**
+ * Re-derives elapsed seconds from a fixed anchor timestamp every tick,
+ * rather than accumulating a counter -- correct immediately even after
+ * backgrounding/closing/reopening the tab.
+ */
+function useElapsedSeconds(anchorMs: number | null): number | null {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (anchorMs == null) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [anchorMs]);
+  if (anchorMs == null) return null;
+  return Math.max(0, Math.floor((now - anchorMs) / 1000));
+}
+
+function playRestAlert() {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    try {
+      navigator.vibrate([200, 100, 200]);
+    } catch {
+      // Vibration not available -- ignore.
+    }
+  }
+  try {
+    const AudioContextClass =
+      window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const oscillator = ctx.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.value = 880;
+    oscillator.connect(ctx.destination);
+    oscillator.start();
+    oscillator.stop(ctx.currentTime + 0.2);
+  } catch {
+    // Audio blocked (e.g. autoplay policy) or unavailable -- ignore.
+  }
+}
+
 export function SessionClient({
   sessionId,
   initialSets,
+  initialStartedAt,
+  restTargetWarmupSeconds,
+  restTargetWorkSeconds,
 }: {
   sessionId: string;
   initialSets: SetRow[];
+  initialStartedAt: Date | null;
+  restTargetWarmupSeconds: number;
+  restTargetWorkSeconds: number;
 }) {
+  const router = useRouter();
   const [rows, setRows] = useState(initialSets);
+  const [startedAt, setStartedAt] = useState(initialStartedAt);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { weight: string; reps: string }>>({});
   const [errorId, setErrorId] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
+  const [completeError, setCompleteError] = useState<string | null>(null);
+  const [alertedAnchorMs, setAlertedAnchorMs] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const hasProgress = rows.some((r) => r.completedAt != null);
+
+  const startedAtMs = startedAt ? startedAt.getTime() : null;
+  const lastCompletedMs = rows.reduce<number | null>((max, r) => {
+    if (!r.completedAt) return max;
+    const t = r.completedAt.getTime();
+    return max == null || t > max ? t : max;
+  }, null);
+  const restAnchorMs = lastCompletedMs ?? startedAtMs;
+
+  const nextPending = rows.find((r) => r.completedAt == null);
+  const restTargetSeconds =
+    nextPending == null
+      ? null
+      : nextPending.setType === "warmup"
+        ? restTargetWarmupSeconds
+        : nextPending.setType === "accessory"
+          ? null
+          : restTargetWorkSeconds;
+
+  const elapsedSeconds = useElapsedSeconds(startedAtMs);
+  const restSeconds = useElapsedSeconds(restAnchorMs);
+  const isRestAlert = restTargetSeconds != null && restSeconds != null && restSeconds >= restTargetSeconds;
+
+  useEffect(() => {
+    if (restTargetSeconds == null || restSeconds == null || restAnchorMs == null) return;
+    if (restSeconds >= restTargetSeconds && alertedAnchorMs !== restAnchorMs) {
+      setAlertedAnchorMs(restAnchorMs);
+      playRestAlert();
+    }
+  }, [restSeconds, restTargetSeconds, restAnchorMs, alertedAnchorMs]);
 
   function handleReset() {
     if (!confirm("Reset this session? This clears every logged set back to blank.")) {
@@ -68,6 +159,28 @@ export function SessionClient({
       );
       setDrafts({});
       setEditingId(null);
+      setStartedAt(null);
+      setAlertedAnchorMs(null);
+    });
+  }
+
+  function handleComplete() {
+    const incompleteCount = rows.filter((r) => r.completedAt == null).length;
+    if (incompleteCount > 0) {
+      const noun = incompleteCount === 1 ? "set" : "sets";
+      if (!confirm(`${incompleteCount} ${noun} still unfinished. Complete the session anyway?`)) {
+        return;
+      }
+    }
+    setCompleteError(null);
+    startTransition(async () => {
+      try {
+        await completeSession(sessionId);
+      } catch {
+        setCompleteError("Couldn't complete the session -- try again.");
+        return;
+      }
+      router.push("/");
     });
   }
 
@@ -124,6 +237,8 @@ export function SessionClient({
         )
       );
       setEditingId(null);
+      setAlertedAnchorMs(null);
+      setStartedAt((prev) => prev ?? new Date());
     });
   }
 
@@ -131,8 +246,24 @@ export function SessionClient({
 
   return (
     <div className="flex flex-col gap-3">
-      {hasProgress && (
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-1 rounded border p-3">
+        <div className="flex justify-between text-sm">
+          <span className="opacity-70">Elapsed</span>
+          <span className="font-mono">
+            {elapsedSeconds != null ? formatDuration(elapsedSeconds) : "--:--"}
+          </span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="opacity-70">Rest</span>
+          <span className={`font-mono ${isRestAlert ? "font-bold text-red-600" : ""}`}>
+            {restSeconds != null ? formatDuration(restSeconds) : "--:--"}
+            {restTargetSeconds != null ? ` / ${formatDuration(restTargetSeconds)}` : ""}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        {hasProgress ? (
           <button
             type="button"
             disabled={isPending}
@@ -141,9 +272,21 @@ export function SessionClient({
           >
             Reset Session
           </button>
-          {resetError && <p className="text-xs text-red-600">{resetError}</p>}
-        </div>
-      )}
+        ) : (
+          <span />
+        )}
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={handleComplete}
+          className={`px-4 py-2 text-sm ${BUTTON_CLASS}`}
+        >
+          Complete Session
+        </button>
+      </div>
+      {resetError && <p className="text-xs text-red-600">{resetError}</p>}
+      {completeError && <p className="text-xs text-red-600">{completeError}</p>}
+
       {rows.map((row) => {
         const groupKey = `${row.liftId}:${row.setType}`;
         const showHeader = groupKey !== lastGroupKey;

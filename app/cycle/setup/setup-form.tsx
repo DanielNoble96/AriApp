@@ -20,6 +20,8 @@ interface SetupFormProps {
   defaultMainWave: MainWaveConfig;
   defaultWarmupScheme: WaveWeek;
   defaultAssistancePercentage: number;
+  defaultRestTargetWarmupSeconds: number;
+  defaultRestTargetWorkSeconds: number;
 }
 
 const WEEK_KEYS = ["week1", "week2", "week3"] as const;
@@ -29,6 +31,8 @@ export function SetupForm({
   defaultMainWave,
   defaultWarmupScheme,
   defaultAssistancePercentage,
+  defaultRestTargetWarmupSeconds,
+  defaultRestTargetWorkSeconds,
 }: SetupFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -45,6 +49,8 @@ export function SetupForm({
   );
   const [mainWave, setMainWave] = useState<MainWaveConfig>(defaultMainWave);
   const [warmupScheme, setWarmupScheme] = useState<WaveWeek>(defaultWarmupScheme);
+  const [restTargetWarmup, setRestTargetWarmup] = useState(String(defaultRestTargetWarmupSeconds));
+  const [restTargetWork, setRestTargetWork] = useState(String(defaultRestTargetWorkSeconds));
 
   const liftsByDay = new Map<number, LiftInfo[]>();
   for (const lift of lifts) {
@@ -101,6 +107,17 @@ export function SetupForm({
       parsedPercentages[lift.id] = num;
     }
 
+    const restWarmupSeconds = Number(restTargetWarmup);
+    if (!restTargetWarmup || Number.isNaN(restWarmupSeconds) || restWarmupSeconds <= 0) {
+      setError("Enter a rest target for warm-ups.");
+      return;
+    }
+    const restWorkSeconds = Number(restTargetWork);
+    if (!restTargetWork || Number.isNaN(restWorkSeconds) || restWorkSeconds <= 0) {
+      setError("Enter a rest target for work sets.");
+      return;
+    }
+
     startTransition(async () => {
       try {
         await createCycle({
@@ -108,6 +125,8 @@ export function SetupForm({
           assistancePercentages: parsedPercentages,
           mainWaveConfig: mainWave,
           warmupScheme,
+          restTargetWarmupSeconds: restWarmupSeconds,
+          restTargetWorkSeconds: restWorkSeconds,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -223,6 +242,32 @@ export function SetupForm({
               />
             </label>
           ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-semibold">Rest Timer Targets</h2>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center justify-between gap-3">
+            <span>Warm-ups (seconds)</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              className="w-20 rounded border px-2 py-1 text-right"
+              value={restTargetWarmup}
+              onChange={(e) => setRestTargetWarmup(e.target.value)}
+            />
+          </label>
+          <label className="flex items-center justify-between gap-3">
+            <span>Work sets -- main &amp; assistance (seconds)</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              className="w-20 rounded border px-2 py-1 text-right"
+              value={restTargetWork}
+              onChange={(e) => setRestTargetWork(e.target.value)}
+            />
+          </label>
         </div>
       </section>
 

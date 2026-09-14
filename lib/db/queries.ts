@@ -52,12 +52,15 @@ export async function getSessionById(sessionId: string) {
       startedAt: sessions.startedAt,
       completedAt: sessions.completedAt,
       dayName: programDays.name,
+      restTargetWarmupSeconds: cycles.restTargetWarmupSeconds,
+      restTargetWorkSeconds: cycles.restTargetWorkSeconds,
     })
     .from(sessions)
     .innerJoin(
       programDays,
       and(eq(programDays.userId, sessions.userId), eq(programDays.dayNumber, sessions.dayNumber))
     )
+    .innerJoin(cycles, eq(cycles.id, sessions.cycleId))
     .where(eq(sessions.id, sessionId))
     .limit(1);
   return row ?? null;

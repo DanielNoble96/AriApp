@@ -19,6 +19,8 @@ export interface CreateCycleInput {
   assistancePercentages: Record<string, number>;
   mainWaveConfig: MainWaveConfig;
   warmupScheme: WaveWeek;
+  restTargetWarmupSeconds: number;
+  restTargetWorkSeconds: number;
 }
 
 export async function createCycle(input: CreateCycleInput) {
@@ -66,6 +68,8 @@ export async function createCycle(input: CreateCycleInput) {
         status: "active",
         mainWaveConfig: input.mainWaveConfig,
         warmupSchemeConfig: input.warmupScheme,
+        restTargetWarmupSeconds: input.restTargetWarmupSeconds,
+        restTargetWorkSeconds: input.restTargetWorkSeconds,
       })
       .returning();
     cycleId = cycle.id;

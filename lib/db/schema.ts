@@ -114,6 +114,10 @@ export const cycles = pgTable(
     status: cycleStatusEnum("status").notNull().default("active"),
     mainWaveConfig: jsonb("main_wave_config").notNull(),
     warmupSchemeConfig: jsonb("warmup_scheme_config").notNull(),
+    // Rest-timer targets (seconds) for the live session screen's alert.
+    // Accessories have no target -- freeform, no consistent rest need.
+    restTargetWarmupSeconds: integer("rest_target_warmup_seconds").notNull(),
+    restTargetWorkSeconds: integer("rest_target_work_seconds").notNull(),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },

@@ -6,6 +6,8 @@ import {
   DEFAULT_MAIN_WAVE,
   DEFAULT_WARMUP_SCHEME,
   DEFAULT_ASSISTANCE_PERCENTAGE,
+  DEFAULT_REST_TARGET_WARMUP_SECONDS,
+  DEFAULT_REST_TARGET_WORK_SECONDS,
 } from "@/lib/constants";
 import { SetupForm } from "./setup-form";
 
@@ -33,6 +35,8 @@ export default async function CycleSetupPage() {
         defaultMainWave={DEFAULT_MAIN_WAVE}
         defaultWarmupScheme={DEFAULT_WARMUP_SCHEME}
         defaultAssistancePercentage={DEFAULT_ASSISTANCE_PERCENTAGE}
+        defaultRestTargetWarmupSeconds={DEFAULT_REST_TARGET_WARMUP_SECONDS}
+        defaultRestTargetWorkSeconds={DEFAULT_REST_TARGET_WORK_SECONDS}
       />
     </main>
   );

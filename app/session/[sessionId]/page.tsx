@@ -33,7 +33,13 @@ export default async function SessionPage({
       <p className="mb-6 text-sm opacity-70">
         {session.dayName} · {session.status.replace("_", " ")}
       </p>
-      <SessionClient sessionId={session.id} initialSets={sessionSets} />
+      <SessionClient
+        sessionId={session.id}
+        initialSets={sessionSets}
+        initialStartedAt={session.startedAt}
+        restTargetWarmupSeconds={session.restTargetWarmupSeconds}
+        restTargetWorkSeconds={session.restTargetWorkSeconds}
+      />
     </main>
   );
 }

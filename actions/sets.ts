@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, and, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { sets, sessions } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
@@ -39,23 +39,12 @@ export async function completeSet(setId: string, actualWeight: number | null, ac
   const [session] = await db.select().from(sessions).where(eq(sessions.id, set.sessionId));
   if (!session) throw new Error("Session not found");
 
+  // Completion is manual now (see actions/sessions.ts's completeSession) --
+  // only handle the pending -> in_progress transition on the first set here.
   if (session.status === "pending") {
     await db
       .update(sessions)
       .set({ status: "in_progress", startedAt: session.startedAt ?? new Date() })
-      .where(eq(sessions.id, session.id));
-  }
-
-  const [remaining] = await db
-    .select({ id: sets.id })
-    .from(sets)
-    .where(and(eq(sets.sessionId, session.id), isNull(sets.completedAt)))
-    .limit(1);
-
-  if (!remaining) {
-    await db
-      .update(sessions)
-      .set({ status: "completed", completedAt: new Date() })
       .where(eq(sessions.id, session.id));
   }
 
