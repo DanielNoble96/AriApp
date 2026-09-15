@@ -41,9 +41,9 @@ export const DEFAULT_ASSISTANCE_PERCENTAGE = 50;
 export const UPPER_BODY_TM_BUMP = 5;
 export const LOWER_BODY_TM_BUMP = 10;
 
-// Rest-timer alert targets (seconds), editable at cycle setup. Accessories
-// have no target -- freeform, no consistent rest need.
-export const DEFAULT_REST_TARGET_WARMUP_SECONDS = 60;
+// Rest-timer alert targets (seconds), editable at cycle setup. The work
+// target also applies to assistance and accessory sets.
+export const DEFAULT_REST_TARGET_WARMUP_SECONDS = 120;
 export const DEFAULT_REST_TARGET_WORK_SECONDS = 180;
 
 // Display order for listing the 4 days within a week -- purely visual;

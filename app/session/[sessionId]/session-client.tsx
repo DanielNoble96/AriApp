@@ -150,14 +150,14 @@ export function SessionClient({
     restAnchorMs == null ? null : Math.max(0, Math.floor((clockMs - restAnchorMs) / 1000));
 
   const nextPending = rows.find((r) => r.completedAt == null);
+  // Warm-ups get their own (shorter) target; work, assistance, and accessory
+  // sets all share the work target.
   const restTargetSeconds =
     nextPending == null
       ? null
       : nextPending.setType === "warmup"
         ? restTargetWarmupSeconds
-        : nextPending.setType === "accessory"
-          ? null
-          : restTargetWorkSeconds;
+        : restTargetWorkSeconds;
 
   const isRestAlert = restTargetSeconds != null && restSeconds != null && restSeconds >= restTargetSeconds;
 
@@ -318,7 +318,7 @@ export function SessionClient({
     <div className="flex flex-col gap-3">
       <div
         className={`${CARD_CLASS} flex flex-col gap-2 p-4 transition-colors ${
-          isPaused ? "bg-brutal-white" : isRestAlert ? "bg-brutal-red" : "bg-brutal-yellow"
+          isPaused ? "bg-brutal-white" : isRestAlert ? "bg-brutal-red" : "bg-brutal-cyan"
         }`}
       >
         {isPaused && <p className="text-xs font-bold uppercase tracking-wide">⏸ Paused</p>}

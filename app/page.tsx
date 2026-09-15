@@ -24,6 +24,10 @@ export default async function Home() {
   const activeCycle = await getActiveCycle(user.id);
   const cycleSessions = activeCycle ? await getSessionsForCycle(activeCycle.id) : [];
   const completedCount = cycleSessions.filter((s) => s.status === "completed").length;
+  // Default-open only the current (first not-fully-done) week; collapse the rest.
+  const firstIncompleteWeek =
+    [1, 2, 3].find((wn) => cycleSessions.some((s) => s.weekNumber === wn && s.status !== "completed")) ??
+    1;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6">
@@ -63,17 +67,21 @@ export default async function Home() {
               const weekCompleted = weekSessions.filter((s) => s.status === "completed").length;
 
               return (
-                <div
+                <details
                   key={weekNumber}
-                  className={`${CARD_CLASS} ${CANDY_BG_CLASSES[wi % CANDY_BG_CLASSES.length]} p-4`}
+                  open={weekNumber === firstIncompleteWeek}
+                  className={`group ${CARD_CLASS} ${CANDY_BG_CLASSES[wi % CANDY_BG_CLASSES.length]} p-4`}
                 >
-                  <div className="mb-3 flex items-baseline justify-between">
+                  <summary className="flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
                     <h3 className="text-lg font-bold">Week {weekNumber}</h3>
-                    <span className="text-xs font-bold opacity-70">
-                      {weekCompleted} of {weekSessions.length} done
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold opacity-70">
+                        {weekCompleted} of {weekSessions.length} done
+                      </span>
+                      <span className="inline-block transition-transform group-open:rotate-180">▼</span>
+                    </div>
+                  </summary>
+                  <div className="mt-3 flex flex-col gap-2">
                     {weekSessions.map((session) => (
                       <Link
                         key={session.id}
@@ -91,7 +99,7 @@ export default async function Home() {
                       </Link>
                     ))}
                   </div>
-                </div>
+                </details>
               );
             })}
           </div>
