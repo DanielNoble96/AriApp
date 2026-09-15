@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { completeSet } from "@/actions/sets";
+import { completeSet, addExtraSet } from "@/actions/sets";
 import { resetSession, completeSession, beginSession, pauseSession, resumeSession } from "@/actions/sessions";
 import { calcPlateBreakdown, calcPlateChange, formatPlateBreakdown } from "@/lib/plates";
 import {
@@ -125,6 +125,7 @@ export function SessionClient({
   const [resetError, setResetError] = useState<string | null>(null);
   const [completeError, setCompleteError] = useState<string | null>(null);
   const [timerError, setTimerError] = useState<string | null>(null);
+  const [addSetError, setAddSetError] = useState<string | null>(null);
   const [alertedAnchorMs, setAlertedAnchorMs] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -312,6 +313,36 @@ export function SessionClient({
     });
   }
 
+  function handleAddSet(lastRowOfGroup: SetRow, setType: "main" | "accessory") {
+    setAddSetError(null);
+    startTransition(async () => {
+      let newSet;
+      try {
+        newSet = await addExtraSet(sessionId, lastRowOfGroup.liftId, setType);
+      } catch {
+        setAddSetError("Couldn't add a set -- try again.");
+        return;
+      }
+      setRows((prev) => {
+        const insertAt = prev.findIndex((r) => r.id === lastRowOfGroup.id) + 1;
+        const newRow: SetRow = {
+          ...lastRowOfGroup,
+          id: newSet.id,
+          orderIndex: newSet.orderIndex,
+          isAmrap: newSet.isAmrap,
+          targetWeight: newSet.targetWeight,
+          targetReps: newSet.targetReps,
+          actualWeight: null,
+          actualReps: null,
+          completedAt: null,
+        };
+        const next = [...prev];
+        next.splice(insertAt, 0, newRow);
+        return next;
+      });
+    });
+  }
+
   let lastGroupKey = "";
 
   return (
@@ -409,6 +440,11 @@ export function SessionClient({
           {completeError}
         </p>
       )}
+      {addSetError && (
+        <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
+          {addSetError}
+        </p>
+      )}
 
       {rows.map((row, index) => {
         const groupKey = `${row.liftId}:${row.setType}`;
@@ -418,6 +454,10 @@ export function SessionClient({
         const isDone = row.completedAt != null;
         const isEditing = editingId === row.id || !isDone;
         const draft = draftFor(row);
+
+        const nextRow = rows[index + 1];
+        const isLastOfGroup = nextRow == null || `${nextRow.liftId}:${nextRow.setType}` !== groupKey;
+        const canAddExtra = isLastOfGroup && (row.setType === "main" || row.setType === "accessory");
 
         return (
           <div key={row.id}>
@@ -479,6 +519,9 @@ export function SessionClient({
 
               {isEditing ? (
                 <div className="flex items-center gap-1">
+                  {row.isAmrap && (
+                    <span className="text-xs font-bold text-red-600">AMRAP</span>
+                  )}
                   <input
                     type="number"
                     inputMode="decimal"
@@ -491,7 +534,7 @@ export function SessionClient({
                     type="number"
                     inputMode="numeric"
                     placeholder="reps"
-                    className={`${COMPACT_INPUT_CLASS} w-14 text-sm`}
+                    className={`${COMPACT_INPUT_CLASS} text-sm ${row.isAmrap ? "w-16" : "w-14"}`}
                     value={draft.reps}
                     onChange={(e) => updateDraft(row, "reps", e.target.value)}
                   />
@@ -520,6 +563,23 @@ export function SessionClient({
             </div>
             {errorId === row.id && (
               <p className="mt-1 text-xs font-bold text-red-600">Enter a valid rep count.</p>
+            )}
+            {canAddExtra && (
+              <div
+                className={`${CARD_CLASS} mt-2 flex items-center justify-between bg-brutal-white p-2`}
+              >
+                <span className="text-xs font-bold uppercase tracking-wide opacity-70">
+                  Extra Sets
+                </span>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => handleAddSet(row, row.setType as "main" | "accessory")}
+                  className={`px-3 py-1 text-xs ${BUTTON_CLASS}`}
+                >
+                  + Add
+                </button>
+              </div>
             )}
           </div>
         );

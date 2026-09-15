@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, and, asc, gte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { sets, sessions } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
@@ -40,4 +40,54 @@ export async function completeSet(setId: string, actualWeight: number | null, ac
   // actions (see actions/sessions.ts) -- checking off a set no longer
   // implicitly starts the timer.
   return { setId: set.id };
+}
+
+/**
+ * Appends a bonus set to the end of a lift's Work Sets or Accessory group,
+ * shifting every later set's orderIndex up by one to make room. Work Sets
+ * extras copy the last set's weight/reps and are marked AMRAP (an extra
+ * work set is for another all-out effort); Accessory extras are blank,
+ * matching the existing freeform accessory rows.
+ */
+export async function addExtraSet(
+  sessionId: string,
+  liftId: string,
+  setType: "main" | "accessory"
+) {
+  const user = await getSessionUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const [session] = await db.select().from(sessions).where(eq(sessions.id, sessionId));
+  if (!session) throw new Error("Session not found");
+  if (session.userId !== user.id) throw new Error("Forbidden");
+
+  const groupSets = await db
+    .select()
+    .from(sets)
+    .where(and(eq(sets.sessionId, sessionId), eq(sets.liftId, liftId), eq(sets.setType, setType)))
+    .orderBy(asc(sets.orderIndex));
+
+  const lastOfGroup = groupSets[groupSets.length - 1];
+  if (!lastOfGroup) throw new Error("No existing sets found for this lift");
+  const insertionIndex = lastOfGroup.orderIndex + 1;
+
+  await db
+    .update(sets)
+    .set({ orderIndex: sql`${sets.orderIndex} + 1` })
+    .where(and(eq(sets.sessionId, sessionId), gte(sets.orderIndex, insertionIndex)));
+
+  const [newSet] = await db
+    .insert(sets)
+    .values({
+      sessionId,
+      liftId,
+      setType,
+      orderIndex: insertionIndex,
+      isAmrap: setType === "main",
+      targetWeight: setType === "main" ? lastOfGroup.targetWeight : null,
+      targetReps: setType === "main" ? lastOfGroup.targetReps : null,
+    })
+    .returning();
+
+  return newSet;
 }
