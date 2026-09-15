@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { completeSet } from "@/actions/sets";
 import { resetSession, completeSession } from "@/actions/sessions";
 import { calcPlateBreakdown, formatPlateBreakdown } from "@/lib/plates";
-import { BUTTON_CLASS } from "@/lib/ui";
+import {
+  BUTTON_CLASS,
+  DANGER_BUTTON_CLASS,
+  SUCCESS_BUTTON_CLASS,
+  CARD_CLASS,
+  PILL_CLASS,
+  COMPACT_INPUT_CLASS,
+} from "@/lib/ui";
 
 interface SetRow {
   id: string;
@@ -246,16 +253,20 @@ export function SessionClient({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1 rounded border p-3">
-        <div className="flex justify-between text-sm">
-          <span className="opacity-70">Elapsed</span>
-          <span className="font-mono">
+      <div
+        className={`${CARD_CLASS} flex flex-col gap-2 p-4 transition-colors ${
+          isRestAlert ? "bg-brutal-red" : "bg-brutal-yellow"
+        }`}
+      >
+        <div className="flex justify-between text-sm font-bold">
+          <span>Elapsed</span>
+          <span className="font-mono text-lg">
             {elapsedSeconds != null ? formatDuration(elapsedSeconds) : "--:--"}
           </span>
         </div>
-        <div className="flex justify-between text-sm">
-          <span className="opacity-70">Rest</span>
-          <span className={`font-mono ${isRestAlert ? "font-bold text-red-600" : ""}`}>
+        <div className="flex justify-between text-sm font-bold">
+          <span>Rest</span>
+          <span className="font-mono text-lg">
             {restSeconds != null ? formatDuration(restSeconds) : "--:--"}
             {restTargetSeconds != null ? ` / ${formatDuration(restTargetSeconds)}` : ""}
           </span>
@@ -268,7 +279,7 @@ export function SessionClient({
             type="button"
             disabled={isPending}
             onClick={handleReset}
-            className="text-sm font-semibold text-red-600 disabled:opacity-50"
+            className={`px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
           >
             Reset Session
           </button>
@@ -279,13 +290,21 @@ export function SessionClient({
           type="button"
           disabled={isPending}
           onClick={handleComplete}
-          className={`px-4 py-2 text-sm ${BUTTON_CLASS}`}
+          className={`px-4 py-2 text-sm ${SUCCESS_BUTTON_CLASS}`}
         >
           Complete Session
         </button>
       </div>
-      {resetError && <p className="text-xs text-red-600">{resetError}</p>}
-      {completeError && <p className="text-xs text-red-600">{completeError}</p>}
+      {resetError && (
+        <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
+          {resetError}
+        </p>
+      )}
+      {completeError && (
+        <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
+          {completeError}
+        </p>
+      )}
 
       {rows.map((row) => {
         const groupKey = `${row.liftId}:${row.setType}`;
@@ -299,17 +318,19 @@ export function SessionClient({
         return (
           <div key={row.id}>
             {showHeader && (
-              <h2 className="mb-2 mt-3 text-sm font-semibold opacity-70">
+              <h2 className={`${PILL_CLASS} mb-2 mt-3 inline-block bg-brutal-white`}>
                 {row.liftName} — {SET_TYPE_LABEL[row.setType]}
               </h2>
             )}
             <div
-              className={`flex items-center justify-between gap-2 rounded border p-2 ${isDone ? "opacity-60" : ""}`}
+              className={`${CARD_CLASS} flex items-center justify-between gap-2 p-3 ${
+                isDone ? "bg-brutal-white opacity-60" : "bg-brutal-white"
+              }`}
             >
               <div className="text-sm">
                 {row.targetWeight != null ? (
                   <>
-                    <span>
+                    <span className="font-bold">
                       {fmt(row.targetWeight)} lb{row.equipmentType === "dumbbell" ? " (each)" : ""} ×{" "}
                       {row.targetReps}
                       {row.isAmrap ? "+" : ""}
@@ -318,7 +339,7 @@ export function SessionClient({
                       (() => {
                         const breakdown = calcPlateBreakdown(Number(row.targetWeight));
                         return (
-                          <div className="text-xs opacity-60">
+                          <div className="text-xs font-medium opacity-70">
                             {breakdown.belowBarWeight
                               ? "Below an empty bar (45 lb) -- use just the bar"
                               : `${formatPlateBreakdown(breakdown.perSide)} / side`}
@@ -327,7 +348,9 @@ export function SessionClient({
                       })()}
                   </>
                 ) : (
-                  <span className="opacity-60">Freeform — log your own weight &amp; reps</span>
+                  <span className="font-medium opacity-70">
+                    Freeform — log your own weight &amp; reps
+                  </span>
                 )}
               </div>
 
@@ -337,7 +360,7 @@ export function SessionClient({
                     type="number"
                     inputMode="decimal"
                     placeholder="lb"
-                    className="w-16 rounded border px-1 py-1 text-right text-sm"
+                    className={`${COMPACT_INPUT_CLASS} w-16 text-sm`}
                     value={draft.weight}
                     onChange={(e) => updateDraft(row, "weight", e.target.value)}
                   />
@@ -345,7 +368,7 @@ export function SessionClient({
                     type="number"
                     inputMode="numeric"
                     placeholder="reps"
-                    className="w-14 rounded border px-1 py-1 text-right text-sm"
+                    className={`${COMPACT_INPUT_CLASS} w-14 text-sm`}
                     value={draft.reps}
                     onChange={(e) => updateDraft(row, "reps", e.target.value)}
                   />
@@ -362,17 +385,19 @@ export function SessionClient({
                 <button
                   type="button"
                   onClick={() => setEditingId(row.id)}
-                  className="flex items-center gap-2 text-sm"
+                  className={`${PILL_CLASS} flex items-center gap-2 bg-brutal-green`}
                 >
                   <span>
                     ✓ {row.actualWeight != null ? `${fmt(row.actualWeight)} lb × ` : ""}
                     {row.actualReps}
                   </span>
-                  <span className="opacity-50">Edit</span>
+                  <span className="opacity-70">Edit</span>
                 </button>
               )}
             </div>
-            {errorId === row.id && <p className="mt-1 text-xs text-red-600">Enter a valid rep count.</p>}
+            {errorId === row.id && (
+              <p className="mt-1 text-xs font-bold text-red-600">Enter a valid rep count.</p>
+            )}
           </div>
         );
       })}

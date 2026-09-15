@@ -10,6 +10,7 @@ import {
   DEFAULT_REST_TARGET_WORK_SECONDS,
 } from "@/lib/constants";
 import { SetupForm } from "./setup-form";
+import { PILL_CLASS } from "@/lib/ui";
 
 // Reads currentTrainingMax fresh each visit -- must not be statically
 // prerendered at build time (see app/page.tsx for the same reasoning).
@@ -23,11 +24,11 @@ export default async function CycleSetupPage() {
 
   return (
     <main className="mx-auto max-w-md p-4">
-      <Link href="/" className="mb-4 inline-block text-sm opacity-70">
+      <Link href="/" className={`${PILL_CLASS} mb-4 inline-block bg-brutal-white`}>
         ← Home
       </Link>
-      <h1 className="mb-1 text-2xl font-bold">New Cycle</h1>
-      <p className="mb-6 text-sm opacity-70">
+      <h1 className="mb-1 text-3xl font-bold tracking-tight">New Cycle</h1>
+      <p className="mb-6 text-sm font-medium opacity-70">
         Set your training maxes and confirm the rep scheme for this cycle.
       </p>
       <SetupForm

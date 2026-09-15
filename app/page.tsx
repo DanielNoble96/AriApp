@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getActiveCycle, getSessionsForCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
 import { logout } from "@/actions/auth";
+import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES } from "@/lib/ui";
 
 // This page reads live DB state (active cycle, session progress) and has no
 // request-time API of its own, so without this it could get statically
@@ -26,13 +27,13 @@ export default async function Home() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Pretty Heavy</h1>
-        <div className="flex items-center gap-4">
-          <Link href="/cycle/setup" className="text-sm font-semibold opacity-70">
+        <h1 className="text-3xl font-bold tracking-tight">Pretty Heavy</h1>
+        <div className="flex items-center gap-2">
+          <Link href="/cycle/setup" className={`${PILL_CLASS} bg-brutal-yellow`}>
             New Cycle
           </Link>
           <form action={logout}>
-            <button type="submit" className="text-sm font-semibold opacity-70">
+            <button type="submit" className={PILL_CLASS}>
               Log Out
             </button>
           </form>
@@ -40,31 +41,35 @@ export default async function Home() {
       </div>
 
       {!activeCycle ? (
-        <p className="text-sm opacity-70">
-          No active cycle yet — start one with the link above.
-        </p>
+        <div className={`${CARD_CLASS} bg-brutal-cyan p-6 text-center`}>
+          <p className="font-bold">No active cycle yet — start one above.</p>
+        </div>
       ) : (
         <>
-          <div>
-            <h2 className="text-lg font-semibold">Cycle {activeCycle.cycleNumber}</h2>
-            <p className="text-sm opacity-70">
+          <div className={`${CARD_CLASS} bg-brutal-cyan p-4`}>
+            <h2 className="text-xl font-bold">Cycle {activeCycle.cycleNumber}</h2>
+            <p className="text-sm font-medium">
               {completedCount} of {cycleSessions.length} sessions complete
             </p>
           </div>
 
-          <div className="flex flex-col gap-2">
-            {cycleSessions.map((session) => (
+          <div className="flex flex-col gap-3">
+            {cycleSessions.map((session, i) => (
               <Link
                 key={session.id}
                 href={`/session/${session.id}`}
-                className={`flex items-center justify-between rounded border p-3 ${
-                  session.status === "completed" ? "opacity-60" : ""
+                className={`${CARD_CLASS} flex items-center justify-between p-3 ${
+                  session.status === "completed"
+                    ? "bg-brutal-white opacity-60"
+                    : CANDY_BG_CLASSES[i % CANDY_BG_CLASSES.length]
                 }`}
               >
-                <span>
+                <span className="font-bold">
                   Week {session.weekNumber}, Day {session.dayNumber}
                 </span>
-                <span className="text-sm opacity-70">{STATUS_LABEL[session.status]}</span>
+                <span className={`${PILL_CLASS} bg-brutal-white text-xs`}>
+                  {STATUS_LABEL[session.status]}
+                </span>
               </Link>
             ))}
           </div>

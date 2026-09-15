@@ -1,19 +1,23 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Neobrutalist theme -- deliberately one committed look (no dark-mode
+   variant), matching the loud candy-color reference this was modeled on.
+   Defined via @theme so these become real utilities: bg-brutal-red, etc. */
+@theme {
+  --color-brutal-bg: #f6bfe0;
+  --color-brutal-black: #0a0a0a;
+  --color-brutal-white: #ffffff;
+  --color-brutal-red: #f2716a;
+  --color-brutal-purple: #b28cf5;
+  --color-brutal-pink: #f472b6;
+  --color-brutal-cyan: #5cd9e8;
+  --color-brutal-yellow: #fde047;
+  --color-brutal-green: #86efac;
+  --font-sans: var(--font-space-grotesk), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--color-brutal-bg);
+  color: var(--color-brutal-black);
+  font-family: var(--font-sans);
 }

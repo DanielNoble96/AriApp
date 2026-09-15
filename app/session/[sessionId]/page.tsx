@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getSessionById, getSetsForSession } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
 import { SessionClient } from "./session-client";
+import { PILL_CLASS } from "@/lib/ui";
 
 // Reads live set/session state -- must not be statically prerendered.
 export const dynamic = "force-dynamic";
@@ -24,13 +25,13 @@ export default async function SessionPage({
 
   return (
     <main className="mx-auto max-w-md p-4 pb-28">
-      <Link href="/" className="mb-4 inline-block text-sm opacity-70">
+      <Link href="/" className={`${PILL_CLASS} mb-4 inline-block bg-brutal-white`}>
         ← Home
       </Link>
-      <h1 className="mb-1 text-2xl font-bold">
+      <h1 className="mb-1 text-3xl font-bold tracking-tight">
         Week {session.weekNumber}, Day {session.dayNumber}
       </h1>
-      <p className="mb-6 text-sm opacity-70">
+      <p className="mb-6 text-sm font-bold opacity-70">
         {session.dayName} · {session.status.replace("_", " ")}
       </p>
       <SessionClient
