@@ -5,7 +5,7 @@ import { calcTotalInol, getInolTier, type InolSetInput, type InolTier } from "@/
 import { BORDER_CLASS, SHADOW_CLASS } from "@/lib/ui";
 
 const TIER_BG: Record<InolTier, string> = {
-  low: "bg-brutal-white",
+  low: "bg-brutal-purple",
   optimal: "bg-brutal-cyan",
   heavy: "bg-brutal-pink",
 };

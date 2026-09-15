@@ -38,7 +38,7 @@ export default async function Home() {
             New Cycle
           </Link>
           <form action={logout}>
-            <button type="submit" className={PILL_CLASS}>
+            <button type="submit" className={`${PILL_CLASS} bg-brutal-green`}>
               Log Out
             </button>
           </form>
