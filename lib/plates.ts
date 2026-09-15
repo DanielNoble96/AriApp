@@ -41,6 +41,18 @@ export function calcPlateBreakdown(
   return { perSide, weightOnBar, belowBarWeight: false };
 }
 
+/**
+ * Breaks down a raw weight difference (no bar involved) into plates per
+ * side -- e.g. the plates to physically add or remove going from one set's
+ * weight to the next, rather than a from-scratch breakdown of the total.
+ */
+export function calcPlateChange(
+  deltaWeight: number,
+  plateSizes: number[] = DEFAULT_PLATE_SIZES
+): number[] {
+  return calcPlateBreakdown(Math.abs(deltaWeight), 0, plateSizes).perSide;
+}
+
 /** e.g. [45, 45, 10] -> "2x45 + 1x10". Empty array -> "Bar only". */
 export function formatPlateBreakdown(perSide: number[]): string {
   if (perSide.length === 0) return "Bar only";

@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { completeSet } from "@/actions/sets";
 import { resetSession, completeSession, beginSession, pauseSession, resumeSession } from "@/actions/sessions";
-import { calcPlateBreakdown, formatPlateBreakdown } from "@/lib/plates";
+import { calcPlateBreakdown, calcPlateChange, formatPlateBreakdown } from "@/lib/plates";
 import {
   BUTTON_CLASS,
   SUCCESS_BUTTON_CLASS,
@@ -410,7 +410,7 @@ export function SessionClient({
         </p>
       )}
 
-      {rows.map((row) => {
+      {rows.map((row, index) => {
         const groupKey = `${row.liftId}:${row.setType}`;
         const showHeader = groupKey !== lastGroupKey;
         lastGroupKey = groupKey;
@@ -441,6 +441,25 @@ export function SessionClient({
                     </span>
                     {row.equipmentType === "barbell" &&
                       (() => {
+                        const prevRow = rows[index - 1];
+                        const hasKnownPrevLoad =
+                          prevRow != null &&
+                          prevRow.equipmentType === "barbell" &&
+                          prevRow.targetWeight != null;
+
+                        if (hasKnownPrevLoad) {
+                          const delta = Number(row.targetWeight) - Number(prevRow!.targetWeight);
+                          if (delta === 0) {
+                            return <div className="text-xs font-medium opacity-70">No plate change</div>;
+                          }
+                          return (
+                            <div className="text-xs font-medium opacity-70">
+                              {delta > 0 ? "Add" : "Remove"} {formatPlateBreakdown(calcPlateChange(delta))}{" "}
+                              / side
+                            </div>
+                          );
+                        }
+
                         const breakdown = calcPlateBreakdown(Number(row.targetWeight));
                         return (
                           <div className="text-xs font-medium opacity-70">

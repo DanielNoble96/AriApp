@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcPlateBreakdown, formatPlateBreakdown } from "../lib/plates";
+import { calcPlateBreakdown, calcPlateChange, formatPlateBreakdown } from "../lib/plates";
 
 describe("calcPlateBreakdown", () => {
   it("returns an empty bar for exactly the bar weight", () => {
@@ -43,6 +43,26 @@ describe("calcPlateBreakdown", () => {
     // (95-15)/2 = 40/side -> 25 + 10 + 5
     expect(result.perSide).toEqual([25, 10, 5]);
     expect(result.weightOnBar).toBe(95);
+  });
+});
+
+describe("calcPlateChange", () => {
+  it("breaks down a positive delta with no bar weight involved", () => {
+    // going from 80 to 90: delta 10, 5/side -> one 5 plate per side
+    expect(calcPlateChange(10)).toEqual([5]);
+  });
+
+  it("treats a negative delta the same as its absolute value", () => {
+    expect(calcPlateChange(-10)).toEqual([5]);
+  });
+
+  it("returns an empty array for zero change", () => {
+    expect(calcPlateChange(0)).toEqual([]);
+  });
+
+  it("handles a larger delta needing multiple plates per side", () => {
+    // delta 30 -> 15/side -> 10 + 5
+    expect(calcPlateChange(30)).toEqual([10, 5]);
   });
 });
 
