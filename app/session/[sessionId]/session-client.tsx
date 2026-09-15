@@ -338,14 +338,24 @@ export function SessionClient({
       </div>
 
       {status === "pending" && (
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={handleBegin}
-          className={`w-full py-3 text-base ${SUCCESS_BUTTON_CLASS}`}
-        >
-          Begin Workout
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleBegin}
+            className={`flex-1 py-3 text-base ${SUCCESS_BUTTON_CLASS}`}
+          >
+            Begin Workout
+          </button>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleComplete}
+            className={`flex-1 py-3 text-base ${BUTTON_CLASS}`}
+          >
+            Complete Session
+          </button>
+        </div>
       )}
       {status === "in_progress" && (
         <button
@@ -363,28 +373,32 @@ export function SessionClient({
         </p>
       )}
 
-      <div className="flex items-center justify-between gap-3">
-        {hasProgress ? (
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleReset}
-            className={`px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
-          >
-            Reset Session
-          </button>
-        ) : (
-          <span />
-        )}
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={handleComplete}
-          className={`px-4 py-2 text-sm ${SUCCESS_BUTTON_CLASS}`}
-        >
-          Complete Session
-        </button>
-      </div>
+      {(hasProgress || status !== "pending") && (
+        <div className="flex items-center justify-between gap-3">
+          {hasProgress ? (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={handleReset}
+              className={`px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
+            >
+              Reset Session
+            </button>
+          ) : (
+            <span />
+          )}
+          {status !== "pending" && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={handleComplete}
+              className={`px-4 py-2 text-sm ${BUTTON_CLASS}`}
+            >
+              Complete Session
+            </button>
+          )}
+        </div>
+      )}
       {resetError && (
         <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
           {resetError}
