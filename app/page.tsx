@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getActiveCycle, getSessionsForCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
 import { logout } from "@/actions/auth";
-import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES } from "@/lib/ui";
+import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
 
 // This page reads live DB state (active cycle, session progress) and has no
 // request-time API of its own, so without this it could get statically
@@ -53,25 +53,42 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3">
-            {cycleSessions.map((session, i) => (
-              <Link
-                key={session.id}
-                href={`/session/${session.id}`}
-                className={`${CARD_CLASS} flex items-center justify-between p-3 ${
-                  session.status === "completed"
-                    ? "bg-brutal-white opacity-60"
-                    : CANDY_BG_CLASSES[i % CANDY_BG_CLASSES.length]
-                }`}
-              >
-                <span className="font-bold">
-                  Week {session.weekNumber}, Day {session.dayNumber}
-                </span>
-                <span className={`${PILL_CLASS} bg-brutal-white text-xs`}>
-                  {STATUS_LABEL[session.status]}
-                </span>
-              </Link>
-            ))}
+          <div className="flex flex-col gap-4">
+            {[1, 2, 3].map((weekNumber, wi) => {
+              const weekSessions = cycleSessions.filter((s) => s.weekNumber === weekNumber);
+              if (weekSessions.length === 0) return null;
+              const weekCompleted = weekSessions.filter((s) => s.status === "completed").length;
+
+              return (
+                <div
+                  key={weekNumber}
+                  className={`${CARD_CLASS} ${CANDY_BG_CLASSES[wi % CANDY_BG_CLASSES.length]} p-4`}
+                >
+                  <div className="mb-3 flex items-baseline justify-between">
+                    <h3 className="text-lg font-bold">Week {weekNumber}</h3>
+                    <span className="text-xs font-bold opacity-70">
+                      {weekCompleted} of {weekSessions.length} done
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {weekSessions.map((session) => (
+                      <Link
+                        key={session.id}
+                        href={`/session/${session.id}`}
+                        className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} flex items-center justify-between rounded-lg bg-brutal-white p-3 ${
+                          session.status === "completed" ? "opacity-60" : ""
+                        }`}
+                      >
+                        <span className="font-bold">Day {session.dayNumber}</span>
+                        <span className={`${PILL_CLASS} bg-brutal-white text-xs`}>
+                          {STATUS_LABEL[session.status]}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}
