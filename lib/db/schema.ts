@@ -202,8 +202,15 @@ export const sets = pgTable("sets", {
   setType: setTypeEnum("set_type").notNull(),
   orderIndex: integer("order_index").notNull(),
   isAmrap: boolean("is_amrap").notNull().default(false),
+  // True only for bonus sets appended via the "Extra Sets" card -- lets the
+  // UI offer removal for those without risking the prescribed program sets.
+  isExtra: boolean("is_extra").notNull().default(false),
   targetWeight: numeric("target_weight", { precision: 6, scale: 2 }),
   targetReps: integer("target_reps"),
+  // The %TM used to generate targetWeight (stored exactly, not
+  // back-derived from the rounded weight) -- doubles as the %1RM input for
+  // the INOL calculator. Null for accessory sets, which have no %TM at all.
+  intensityPercentage: numeric("intensity_percentage", { precision: 5, scale: 2 }),
   actualWeight: numeric("actual_weight", { precision: 6, scale: 2 }),
   actualReps: integer("actual_reps"),
   completedAt: timestamp("completed_at", { withTimezone: true }),

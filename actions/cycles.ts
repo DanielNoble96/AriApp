@@ -148,6 +148,8 @@ export async function createCycle(input: CreateCycleInput) {
               isAmrap: row.isAmrap,
               targetWeight: row.targetWeight != null ? String(row.targetWeight) : null,
               targetReps: row.targetReps,
+              intensityPercentage:
+                row.intensityPercentage != null ? String(row.intensityPercentage) : null,
             }))
           );
         }

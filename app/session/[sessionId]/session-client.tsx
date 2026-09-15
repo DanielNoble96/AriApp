@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { completeSet, addExtraSet } from "@/actions/sets";
+import { completeSet, addExtraSet, removeSet } from "@/actions/sets";
 import { resetSession, completeSession, beginSession, pauseSession, resumeSession } from "@/actions/sessions";
 import { calcPlateBreakdown, calcPlateChange, formatPlateBreakdown } from "@/lib/plates";
+import { InolWidget } from "./inol-widget";
 import {
   BUTTON_CLASS,
   SUCCESS_BUTTON_CLASS,
@@ -23,8 +24,10 @@ interface SetRow {
   setType: "warmup" | "main" | "assistance" | "accessory";
   orderIndex: number;
   isAmrap: boolean;
+  isExtra: boolean;
   targetWeight: string | null;
   targetReps: number | null;
+  intensityPercentage: string | null;
   actualWeight: string | null;
   actualReps: number | null;
   completedAt: Date | null;
@@ -252,7 +255,7 @@ export function SessionClient({
         setCompleteError("Couldn't complete the session -- try again.");
         return;
       }
-      router.push("/");
+      router.push(`/session/${sessionId}/results`);
     });
   }
 
@@ -330,8 +333,10 @@ export function SessionClient({
           id: newSet.id,
           orderIndex: newSet.orderIndex,
           isAmrap: newSet.isAmrap,
+          isExtra: true,
           targetWeight: newSet.targetWeight,
           targetReps: newSet.targetReps,
+          intensityPercentage: newSet.intensityPercentage,
           actualWeight: null,
           actualReps: null,
           completedAt: null,
@@ -343,10 +348,27 @@ export function SessionClient({
     });
   }
 
+  function handleRemoveSet(row: SetRow) {
+    if (!row.isExtra && !confirm("Remove this set? This can't be undone.")) {
+      return;
+    }
+    setAddSetError(null);
+    startTransition(async () => {
+      try {
+        await removeSet(row.id);
+      } catch {
+        setAddSetError("Couldn't remove that set -- try again.");
+        return;
+      }
+      setRows((prev) => prev.filter((r) => r.id !== row.id));
+    });
+  }
+
   let lastGroupKey = "";
 
   return (
     <div className="flex flex-col gap-3">
+      <InolWidget sets={rows} />
       <div
         className={`${CARD_CLASS} flex flex-col gap-2 p-4 transition-colors ${
           isPaused ? "bg-brutal-white" : isRestAlert ? "bg-brutal-red" : "bg-brutal-cyan"
@@ -520,7 +542,7 @@ export function SessionClient({
               {isEditing ? (
                 <div className="flex items-center gap-1">
                   {row.isAmrap && (
-                    <span className="text-xs font-bold text-red-600">AMRAP</span>
+                    <span className="text-xs font-bold text-brutal-pink">AMRAP</span>
                   )}
                   <input
                     type="number"
@@ -560,6 +582,15 @@ export function SessionClient({
                   <span className="opacity-70">Edit</span>
                 </button>
               )}
+              <button
+                type="button"
+                aria-label="Remove set"
+                disabled={isPending}
+                onClick={() => handleRemoveSet(row)}
+                className="shrink-0 text-lg font-bold leading-none opacity-50 hover:opacity-100"
+              >
+                ×
+              </button>
             </div>
             {errorId === row.id && (
               <p className="mt-1 text-xs font-bold text-red-600">Enter a valid rep count.</p>

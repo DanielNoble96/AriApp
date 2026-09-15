@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, and, asc, gte, sql } from "drizzle-orm";
+import { eq, and, asc, gte, gt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { sets, sessions } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
@@ -84,10 +84,39 @@ export async function addExtraSet(
       setType,
       orderIndex: insertionIndex,
       isAmrap: setType === "main",
+      isExtra: true,
       targetWeight: setType === "main" ? lastOfGroup.targetWeight : null,
       targetReps: setType === "main" ? lastOfGroup.targetReps : null,
+      intensityPercentage: setType === "main" ? lastOfGroup.intensityPercentage : null,
     })
     .returning();
 
   return newSet;
+}
+
+/**
+ * Removes any set (prescribed or extra) and shifts later sets in the same
+ * session down to close the gap. Callers should confirm before removing a
+ * prescribed set -- an extra set (just added by mistake) is safe to remove
+ * without confirmation, but deleting prescribed program work is more
+ * consequential and easy to mis-tap on mobile.
+ */
+export async function removeSet(setId: string) {
+  const user = await getSessionUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const [owned] = await db
+    .select({ userId: sessions.userId, sessionId: sets.sessionId, orderIndex: sets.orderIndex })
+    .from(sets)
+    .innerJoin(sessions, eq(sets.sessionId, sessions.id))
+    .where(eq(sets.id, setId));
+  if (!owned) throw new Error("Set not found");
+  if (owned.userId !== user.id) throw new Error("Forbidden");
+
+  await db.delete(sets).where(eq(sets.id, setId));
+
+  await db
+    .update(sets)
+    .set({ orderIndex: sql`${sets.orderIndex} - 1` })
+    .where(and(eq(sets.sessionId, owned.sessionId), gt(sets.orderIndex, owned.orderIndex)));
 }

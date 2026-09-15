@@ -45,6 +45,8 @@ export interface SetPlanRow {
   targetWeight: number | null;
   targetReps: number | null;
   isAmrap: boolean;
+  /** The %TM used to compute targetWeight -- the INOL calculator's %1RM input. Null for accessories. */
+  intensityPercentage: number | null;
 }
 
 export function generateWarmupSets(
@@ -59,6 +61,7 @@ export function generateWarmupSets(
     targetWeight: calcTargetWeight(trainingMax, set.percentage, increment, minWeight),
     targetReps: set.reps,
     isAmrap: false,
+    intensityPercentage: set.percentage,
   }));
 }
 
@@ -74,6 +77,7 @@ export function generateMainSets(
     targetWeight: calcTargetWeight(trainingMax, set.percentage, increment, minWeight),
     targetReps: set.reps,
     isAmrap: Boolean(set.amrap),
+    intensityPercentage: set.percentage,
   }));
 }
 
@@ -93,6 +97,7 @@ export function generateAssistanceSets(
     targetWeight,
     targetReps: reps,
     isAmrap: false,
+    intensityPercentage: percentage,
   }));
 }
 
@@ -104,6 +109,7 @@ export function generateAccessoryPlaceholders(count: number = 3): SetPlanRow[] {
     targetWeight: null,
     targetReps: null,
     isAmrap: false,
+    intensityPercentage: null,
   }));
 }
 
