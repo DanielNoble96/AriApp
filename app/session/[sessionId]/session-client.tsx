@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { completeSet } from "@/actions/sets";
-import { resetSession, completeSession } from "@/actions/sessions";
+import { resetSession, completeSession, beginSession, pauseSession, resumeSession } from "@/actions/sessions";
 import { calcPlateBreakdown, formatPlateBreakdown } from "@/lib/plates";
 import {
   BUTTON_CLASS,
@@ -53,19 +53,20 @@ function formatDuration(totalSeconds: number): string {
 }
 
 /**
- * Re-derives elapsed seconds from a fixed anchor timestamp every tick,
- * rather than accumulating a counter -- correct immediately even after
+ * Ticks once a second while `active`, otherwise holds still. Elapsed/rest
+ * values are computed from this plus fixed anchor timestamps (not
+ * accumulated counters), so they're correct immediately even after
  * backgrounding/closing/reopening the tab.
  */
-function useElapsedSeconds(anchorMs: number | null): number | null {
+function useTickingNow(active: boolean): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (anchorMs == null) return;
+    if (!active) return;
+    setNow(Date.now());
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, [anchorMs]);
-  if (anchorMs == null) return null;
-  return Math.max(0, Math.floor((now - anchorMs) / 1000));
+  }, [active]);
+  return now;
 }
 
 function playRestAlert() {
@@ -96,36 +97,57 @@ function playRestAlert() {
 export function SessionClient({
   sessionId,
   initialSets,
+  initialStatus,
   initialStartedAt,
+  initialPausedAt,
+  initialPausedSeconds,
   restTargetWarmupSeconds,
   restTargetWorkSeconds,
 }: {
   sessionId: string;
   initialSets: SetRow[];
+  initialStatus: "pending" | "in_progress" | "completed";
   initialStartedAt: Date | null;
+  initialPausedAt: Date | null;
+  initialPausedSeconds: number;
   restTargetWarmupSeconds: number;
   restTargetWorkSeconds: number;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState(initialSets);
+  const [status, setStatus] = useState(initialStatus);
   const [startedAt, setStartedAt] = useState(initialStartedAt);
+  const [pausedAt, setPausedAt] = useState(initialPausedAt);
+  const [pausedSeconds, setPausedSeconds] = useState(initialPausedSeconds);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { weight: string; reps: string }>>({});
   const [errorId, setErrorId] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
   const [completeError, setCompleteError] = useState<string | null>(null);
+  const [timerError, setTimerError] = useState<string | null>(null);
   const [alertedAnchorMs, setAlertedAnchorMs] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const hasProgress = rows.some((r) => r.completedAt != null);
+  const isPaused = pausedAt != null;
+  const isRunning = status === "in_progress" && !isPaused;
+
+  const now = useTickingNow(isRunning);
+  // Freezes both timers at the exact moment pause began; otherwise ticks live.
+  const clockMs = isPaused && pausedAt ? pausedAt.getTime() : now;
 
   const startedAtMs = startedAt ? startedAt.getTime() : null;
+  const elapsedSeconds =
+    startedAtMs == null ? null : Math.max(0, Math.floor((clockMs - startedAtMs) / 1000) - pausedSeconds);
+
   const lastCompletedMs = rows.reduce<number | null>((max, r) => {
     if (!r.completedAt) return max;
     const t = r.completedAt.getTime();
     return max == null || t > max ? t : max;
   }, null);
   const restAnchorMs = lastCompletedMs ?? startedAtMs;
+  const restSeconds =
+    restAnchorMs == null ? null : Math.max(0, Math.floor((clockMs - restAnchorMs) / 1000));
 
   const nextPending = rows.find((r) => r.completedAt == null);
   const restTargetSeconds =
@@ -137,8 +159,6 @@ export function SessionClient({
           ? null
           : restTargetWorkSeconds;
 
-  const elapsedSeconds = useElapsedSeconds(startedAtMs);
-  const restSeconds = useElapsedSeconds(restAnchorMs);
   const isRestAlert = restTargetSeconds != null && restSeconds != null && restSeconds >= restTargetSeconds;
 
   useEffect(() => {
@@ -166,8 +186,52 @@ export function SessionClient({
       );
       setDrafts({});
       setEditingId(null);
+      setStatus("pending");
       setStartedAt(null);
+      setPausedAt(null);
+      setPausedSeconds(0);
       setAlertedAnchorMs(null);
+    });
+  }
+
+  function handleBegin() {
+    setTimerError(null);
+    startTransition(async () => {
+      try {
+        await beginSession(sessionId);
+      } catch {
+        setTimerError("Couldn't start the session -- try again.");
+        return;
+      }
+      setStatus("in_progress");
+      setStartedAt(new Date());
+    });
+  }
+
+  function handlePauseToggle() {
+    setTimerError(null);
+    const wasPaused = isPaused;
+    const pauseStartedAt = pausedAt;
+    startTransition(async () => {
+      try {
+        if (wasPaused) {
+          await resumeSession(sessionId);
+        } else {
+          await pauseSession(sessionId);
+        }
+      } catch {
+        setTimerError("Couldn't update the pause state -- try again.");
+        return;
+      }
+      if (wasPaused) {
+        const pausedDuration = pauseStartedAt
+          ? Math.max(0, Math.floor((Date.now() - pauseStartedAt.getTime()) / 1000))
+          : 0;
+        setPausedSeconds((prev) => prev + pausedDuration);
+        setPausedAt(null);
+      } else {
+        setPausedAt(new Date());
+      }
     });
   }
 
@@ -245,7 +309,6 @@ export function SessionClient({
       );
       setEditingId(null);
       setAlertedAnchorMs(null);
-      setStartedAt((prev) => prev ?? new Date());
     });
   }
 
@@ -255,9 +318,10 @@ export function SessionClient({
     <div className="flex flex-col gap-3">
       <div
         className={`${CARD_CLASS} flex flex-col gap-2 p-4 transition-colors ${
-          isRestAlert ? "bg-brutal-red" : "bg-brutal-yellow"
+          isPaused ? "bg-brutal-white" : isRestAlert ? "bg-brutal-red" : "bg-brutal-yellow"
         }`}
       >
+        {isPaused && <p className="text-xs font-bold uppercase tracking-wide">⏸ Paused</p>}
         <div className="flex justify-between text-sm font-bold">
           <span>Elapsed</span>
           <span className="font-mono text-lg">
@@ -272,6 +336,32 @@ export function SessionClient({
           </span>
         </div>
       </div>
+
+      {status === "pending" && (
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={handleBegin}
+          className={`w-full py-3 text-base ${SUCCESS_BUTTON_CLASS}`}
+        >
+          Begin Workout
+        </button>
+      )}
+      {status === "in_progress" && (
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={handlePauseToggle}
+          className={`w-full py-3 text-base ${isPaused ? SUCCESS_BUTTON_CLASS : BUTTON_CLASS}`}
+        >
+          {isPaused ? "Resume Workout" : "Pause Workout"}
+        </button>
+      )}
+      {timerError && (
+        <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
+          {timerError}
+        </p>
+      )}
 
       <div className="flex items-center justify-between gap-3">
         {hasProgress ? (

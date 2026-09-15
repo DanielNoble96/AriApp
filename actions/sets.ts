@@ -36,17 +36,8 @@ export async function completeSet(setId: string, actualWeight: number | null, ac
 
   if (!set) throw new Error("Set not found");
 
-  const [session] = await db.select().from(sessions).where(eq(sessions.id, set.sessionId));
-  if (!session) throw new Error("Session not found");
-
-  // Completion is manual now (see actions/sessions.ts's completeSession) --
-  // only handle the pending -> in_progress transition on the first set here.
-  if (session.status === "pending") {
-    await db
-      .update(sessions)
-      .set({ status: "in_progress", startedAt: session.startedAt ?? new Date() })
-      .where(eq(sessions.id, session.id));
-  }
-
+  // Starting/pausing/completing the session are now exclusively explicit
+  // actions (see actions/sessions.ts) -- checking off a set no longer
+  // implicitly starts the timer.
   return { setId: set.id };
 }

@@ -50,6 +50,8 @@ export async function getSessionById(sessionId: string) {
       sequenceIndex: sessions.sequenceIndex,
       status: sessions.status,
       startedAt: sessions.startedAt,
+      pausedAt: sessions.pausedAt,
+      pausedSeconds: sessions.pausedSeconds,
       completedAt: sessions.completedAt,
       dayName: programDays.name,
       restTargetWarmupSeconds: cycles.restTargetWarmupSeconds,

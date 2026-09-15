@@ -37,7 +37,10 @@ export default async function SessionPage({
       <SessionClient
         sessionId={session.id}
         initialSets={sessionSets}
+        initialStatus={session.status}
         initialStartedAt={session.startedAt}
+        initialPausedAt={session.pausedAt}
+        initialPausedSeconds={session.pausedSeconds}
         restTargetWarmupSeconds={session.restTargetWarmupSeconds}
         restTargetWorkSeconds={session.restTargetWorkSeconds}
       />

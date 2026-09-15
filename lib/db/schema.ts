@@ -177,6 +177,12 @@ export const sessions = pgTable(
     sequenceIndex: integer("sequence_index").notNull(),
     status: sessionStatusEnum("status").notNull().default("pending"),
     startedAt: timestamp("started_at", { withTimezone: true }),
+    // Set while actively paused; null otherwise. pausedSeconds accumulates
+    // total time spent paused across possibly multiple pause/resume cycles,
+    // so elapsed/rest timers can be computed as (now - startedAt - pausedSeconds)
+    // and freeze correctly (via pausedAt) even across a closed/reopened app.
+    pausedAt: timestamp("paused_at", { withTimezone: true }),
+    pausedSeconds: integer("paused_seconds").notNull().default(0),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (table) => [unique().on(table.cycleId, table.sequenceIndex)]
