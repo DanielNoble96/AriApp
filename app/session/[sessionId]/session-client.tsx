@@ -7,7 +7,6 @@ import { resetSession, completeSession, beginSession, pauseSession, resumeSessio
 import { calcPlateBreakdown, formatPlateBreakdown } from "@/lib/plates";
 import {
   BUTTON_CLASS,
-  DANGER_BUTTON_CLASS,
   SUCCESS_BUTTON_CLASS,
   PINK_BUTTON_CLASS,
   CARD_CLASS,
@@ -381,7 +380,7 @@ export function SessionClient({
               type="button"
               disabled={isPending}
               onClick={handleReset}
-              className={`px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
+              className={`px-3 py-2 text-sm ${BUTTON_CLASS}`}
             >
               Reset Session
             </button>
