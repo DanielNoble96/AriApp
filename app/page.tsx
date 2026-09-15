@@ -4,6 +4,7 @@ import { getActiveCycle, getSessionsForCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
 import { logout } from "@/actions/auth";
 import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
+import { DAY_LABELS } from "@/lib/constants";
 
 // This page reads live DB state (active cycle, session progress) and has no
 // request-time API of its own, so without this it could get statically
@@ -79,7 +80,9 @@ export default async function Home() {
                           session.status === "completed" ? "opacity-60" : ""
                         }`}
                       >
-                        <span className="font-bold">Day {session.dayNumber}</span>
+                        <span className="font-bold">
+                          {DAY_LABELS[session.dayNumber] ?? `Day ${session.dayNumber}`}
+                        </span>
                         <span className={`${PILL_CLASS} bg-brutal-white text-xs`}>
                           {STATUS_LABEL[session.status]}
                         </span>

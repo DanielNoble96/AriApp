@@ -45,3 +45,11 @@ export const LOWER_BODY_TM_BUMP = 10;
 // have no target -- freeform, no consistent rest need.
 export const DEFAULT_REST_TARGET_WARMUP_SECONDS = 60;
 export const DEFAULT_REST_TARGET_WORK_SECONDS = 180;
+
+// Display labels for each of the 4 fixed program days.
+export const DAY_LABELS: Record<number, string> = {
+  1: "Lower Body + Abs",
+  2: "Upper Body",
+  3: "Glutes",
+  4: "Back + Abs",
+};
