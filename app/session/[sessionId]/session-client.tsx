@@ -10,6 +10,7 @@ import {
   BUTTON_CLASS,
   SUCCESS_BUTTON_CLASS,
   PINK_BUTTON_CLASS,
+  DANGER_BUTTON_CLASS,
   CARD_CLASS,
   PILL_CLASS,
   COMPACT_INPUT_CLASS,
@@ -433,7 +434,7 @@ export function SessionClient({
               type="button"
               disabled={isPending}
               onClick={handleReset}
-              className={`px-3 py-2 text-sm ${BUTTON_CLASS}`}
+              className={`px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
             >
               Reset Session
             </button>
