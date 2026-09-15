@@ -28,7 +28,8 @@ export const DANGER_BUTTON_CLASS =
 export const SUCCESS_BUTTON_CLASS =
   `${BORDER_CLASS} ${SHADOW_CLASS} rounded-lg bg-brutal-green font-bold text-brutal-black transition-transform active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:opacity-50`;
 
-export const PILL_CLASS = `${BORDER_CLASS} rounded-full bg-brutal-white px-3 py-1 text-sm font-bold text-brutal-black`;
+export const PILL_CLASS =
+  `${BORDER_CLASS} inline-flex items-center justify-center whitespace-nowrap rounded-full bg-brutal-white px-3 py-1 text-sm font-bold text-brutal-black`;
 
 /** Rotating background colors for day/section cards. */
 export const CANDY_BG_CLASSES = [
