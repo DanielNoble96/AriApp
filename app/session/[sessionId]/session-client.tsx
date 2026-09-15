@@ -9,6 +9,7 @@ import {
   BUTTON_CLASS,
   DANGER_BUTTON_CLASS,
   SUCCESS_BUTTON_CLASS,
+  PINK_BUTTON_CLASS,
   CARD_CLASS,
   PILL_CLASS,
   COMPACT_INPUT_CLASS,
@@ -351,7 +352,7 @@ export function SessionClient({
             type="button"
             disabled={isPending}
             onClick={handleComplete}
-            className={`flex-1 py-3 text-base ${BUTTON_CLASS}`}
+            className={`flex-1 py-3 text-base ${PINK_BUTTON_CLASS}`}
           >
             Complete Session
           </button>
@@ -392,7 +393,7 @@ export function SessionClient({
               type="button"
               disabled={isPending}
               onClick={handleComplete}
-              className={`px-4 py-2 text-sm ${BUTTON_CLASS}`}
+              className={`px-4 py-2 text-sm ${PINK_BUTTON_CLASS}`}
             >
               Complete Session
             </button>
