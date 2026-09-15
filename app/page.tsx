@@ -4,7 +4,7 @@ import { getActiveCycle, getSessionsForCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
 import { logout } from "@/actions/auth";
 import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
-import { DAY_LABELS } from "@/lib/constants";
+import { DAY_LABELS, DAY_DISPLAY_ORDER } from "@/lib/constants";
 
 // This page reads live DB state (active cycle, session progress) and has no
 // request-time API of its own, so without this it could get statically
@@ -56,7 +56,9 @@ export default async function Home() {
 
           <div className="flex flex-col gap-4">
             {[1, 2, 3].map((weekNumber, wi) => {
-              const weekSessions = cycleSessions.filter((s) => s.weekNumber === weekNumber);
+              const weekSessions = cycleSessions
+                .filter((s) => s.weekNumber === weekNumber)
+                .sort((a, b) => DAY_DISPLAY_ORDER.indexOf(a.dayNumber) - DAY_DISPLAY_ORDER.indexOf(b.dayNumber));
               if (weekSessions.length === 0) return null;
               const weekCompleted = weekSessions.filter((s) => s.status === "completed").length;
 
