@@ -41,7 +41,7 @@ export default async function SessionResultsPage({
         <p className="text-6xl font-bold">{inol.toFixed(2)}</p>
         <p className="text-xl font-bold">{INOL_TIER_LABEL[tier]}</p>
       </div>
-      <Link href="/" className={`${PILL_CLASS} bg-brutal-yellow`}>
+      <Link href="/" className={`${PILL_CLASS} bg-brutal-white`}>
         ← Home
       </Link>
     </main>
