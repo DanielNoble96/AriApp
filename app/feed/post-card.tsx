@@ -136,47 +136,49 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
         </p>
       )}
 
-      {(post.photos.length > 0 || isOwner) && (
-        <div className="mt-3 grid grid-cols-3 gap-1">
-          {post.photos.map((photo) => (
-            <div key={photo.id} className="relative aspect-square">
+      {post.photos.length > 0 && (
+        <div className="relative mt-3 h-80 snap-y snap-mandatory overflow-y-auto rounded-lg border-[3px] border-brutal-black">
+          {post.photos.map((photo, i) => (
+            <div key={photo.id} className="relative h-80 w-full shrink-0 snap-start">
               {/* eslint-disable-next-line @next/next/no-img-element -- served via app/api/photos, no next/image config in this app */}
-              <img
-                src={photo.photoUrl}
-                alt=""
-                className="h-full w-full rounded-lg border-[3px] border-brutal-black object-cover"
-              />
+              <img src={photo.photoUrl} alt="" className="h-full w-full object-cover" />
               {isOwner && (
                 <button
                   type="button"
                   aria-label="Remove photo"
                   disabled={isPending}
                   onClick={() => handleRemovePhoto(photo.id)}
-                  className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-brutal-black bg-brutal-white text-sm font-bold leading-none"
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-brutal-black bg-brutal-white text-base font-bold leading-none"
                 >
                   ×
                 </button>
               )}
+              {post.photos.length > 1 && (
+                <span className="absolute bottom-2 right-2 rounded-full border-2 border-brutal-black bg-brutal-white px-2 py-0.5 text-xs font-bold">
+                  {i + 1}/{post.photos.length}
+                </span>
+              )}
             </div>
           ))}
-          {isOwner && post.photos.length < MAX_PHOTOS && (
-            <label
-              className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-lg bg-brutal-white text-xs font-bold ${
-                isPending ? "opacity-50" : ""
-              }`}
-            >
-              <span>📷</span>
-              <span>Add</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                disabled={isPending}
-                onChange={handlePhotoChange}
-              />
-            </label>
-          )}
         </div>
+      )}
+
+      {isOwner && post.photos.length < MAX_PHOTOS && (
+        <label
+          className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-brutal-white p-3 text-sm font-bold ${
+            isPending ? "opacity-50" : ""
+          }`}
+        >
+          📷 Add a photo{post.photos.length > 0 ? ` (${post.photos.length}/${MAX_PHOTOS})` : ""}
+          <input
+            key={post.photos.length}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={isPending}
+            onChange={handlePhotoChange}
+          />
+        </label>
       )}
 
       {!isAccessoryDay && inol != null && tier != null && (
