@@ -293,7 +293,19 @@ export const posts = pgTable("posts", {
     .references(() => accessoryDayEntries.id, { onDelete: "cascade" }),
   inolScore: numeric("inol_score", { precision: 6, scale: 3 }),
   caption: text("caption"),
-  photoUrl: text("photo_url"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Up to 3 photos per post (enforced in actions/posts.ts, not here).
+// photoUrl is this app's own /api/photos serving route, not the blob's own
+// URL -- the Blob store is private, so photos are streamed back through
+// that route rather than linked to directly. createdAt orders the gallery.
+export const postPhotos = pgTable("post_photos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id")
+    .notNull()
+    .references(() => posts.id, { onDelete: "cascade" }),
+  photoUrl: text("photo_url").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

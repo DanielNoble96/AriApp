@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updatePostCaption, uploadPostPhoto } from "@/actions/posts";
+import { updatePostCaption, uploadPostPhoto, removePostPhoto } from "@/actions/posts";
 import { addComment } from "@/actions/comments";
 import { getInolTier, INOL_TIER_LABEL, type InolTier } from "@/lib/inol";
 import { CARD_CLASS, INPUT_CLASS, BUTTON_CLASS, PILL_CLASS, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
@@ -14,6 +14,8 @@ const TIER_BG: Record<InolTier, string> = {
   optimal: "bg-brutal-cyan",
   heavy: "bg-brutal-pink",
 };
+
+const MAX_PHOTOS = 3;
 
 /** Drops trailing ".00" from numeric-column strings for display. */
 function fmt(value: string): string {
@@ -76,6 +78,20 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
     });
   }
 
+  function handleRemovePhoto(photoId: string) {
+    if (!confirm("Remove this photo?")) return;
+    setError(null);
+    startTransition(async () => {
+      try {
+        await removePostPhoto(photoId);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Couldn't remove photo.");
+        return;
+      }
+      router.refresh();
+    });
+  }
+
   function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
     if (!commentDraft.trim()) return;
@@ -120,30 +136,47 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
         </p>
       )}
 
-      {post.photoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- external Blob URL, no next/image config in this app
-        <img
-          src={post.photoUrl}
-          alt=""
-          className="mt-3 w-full rounded-lg border-[3px] border-brutal-black"
-        />
-      ) : (
-        isOwner && (
-          <label
-            className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-brutal-white p-3 text-sm font-bold ${
-              isPending ? "opacity-50" : ""
-            }`}
-          >
-            📷 Add a photo
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              disabled={isPending}
-              onChange={handlePhotoChange}
-            />
-          </label>
-        )
+      {(post.photos.length > 0 || isOwner) && (
+        <div className="mt-3 grid grid-cols-3 gap-1">
+          {post.photos.map((photo) => (
+            <div key={photo.id} className="relative aspect-square">
+              {/* eslint-disable-next-line @next/next/no-img-element -- served via app/api/photos, no next/image config in this app */}
+              <img
+                src={photo.photoUrl}
+                alt=""
+                className="h-full w-full rounded-lg border-[3px] border-brutal-black object-cover"
+              />
+              {isOwner && (
+                <button
+                  type="button"
+                  aria-label="Remove photo"
+                  disabled={isPending}
+                  onClick={() => handleRemovePhoto(photo.id)}
+                  className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-brutal-black bg-brutal-white text-sm font-bold leading-none"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          {isOwner && post.photos.length < MAX_PHOTOS && (
+            <label
+              className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-lg bg-brutal-white text-xs font-bold ${
+                isPending ? "opacity-50" : ""
+              }`}
+            >
+              <span>📷</span>
+              <span>Add</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={isPending}
+                onChange={handlePhotoChange}
+              />
+            </label>
+          )}
+        </div>
       )}
 
       {!isAccessoryDay && inol != null && tier != null && (

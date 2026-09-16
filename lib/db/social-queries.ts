@@ -6,6 +6,7 @@ import {
   sets,
   sessions,
   posts,
+  postPhotos,
   postPrs,
   comments,
   programDays,
@@ -150,6 +151,11 @@ export interface FeedPostComment {
   createdAt: Date;
 }
 
+export interface FeedPostPhoto {
+  id: string;
+  photoUrl: string;
+}
+
 export interface FeedPost {
   id: string;
   userId: string;
@@ -158,7 +164,7 @@ export interface FeedPost {
   kind: "session" | "accessory_day";
   inolScore: string | null;
   caption: string | null;
-  photoUrl: string | null;
+  photos: FeedPostPhoto[];
   createdAt: Date;
   weekNumber: number | null;
   dayNumber: number | null;
@@ -183,7 +189,6 @@ export async function getFeedPosts(userId: string): Promise<FeedPost[]> {
       authorName: users.name,
       inolScore: posts.inolScore,
       caption: posts.caption,
-      photoUrl: posts.photoUrl,
       createdAt: posts.createdAt,
       weekNumber: sessions.weekNumber,
       dayNumber: sessions.dayNumber,
@@ -208,6 +213,12 @@ export async function getFeedPosts(userId: string): Promise<FeedPost[]> {
 
   const postIds = postRows.map((p) => p.id);
 
+  const photoRows = await db
+    .select({ id: postPhotos.id, postId: postPhotos.postId, photoUrl: postPhotos.photoUrl })
+    .from(postPhotos)
+    .where(inArray(postPhotos.postId, postIds))
+    .orderBy(asc(postPhotos.createdAt));
+
   const prRows = await db.select().from(postPrs).where(inArray(postPrs.postId, postIds));
   const commentRows = await db
     .select({
@@ -223,6 +234,13 @@ export async function getFeedPosts(userId: string): Promise<FeedPost[]> {
     .innerJoin(users, eq(users.id, comments.userId))
     .where(inArray(comments.postId, postIds))
     .orderBy(asc(comments.createdAt));
+
+  const photosByPost = new Map<string, FeedPostPhoto[]>();
+  for (const photo of photoRows) {
+    const arr = photosByPost.get(photo.postId) ?? [];
+    arr.push({ id: photo.id, photoUrl: photo.photoUrl });
+    photosByPost.set(photo.postId, arr);
+  }
 
   const prsByPost = new Map<string, FeedPostPr[]>();
   for (const pr of prRows) {
@@ -241,6 +259,7 @@ export async function getFeedPosts(userId: string): Promise<FeedPost[]> {
   return postRows.map((p) => ({
     ...p,
     kind: p.activityType != null ? ("accessory_day" as const) : ("session" as const),
+    photos: photosByPost.get(p.id) ?? [],
     prs: prsByPost.get(p.id) ?? [],
     comments: commentsByPost.get(p.id) ?? [],
   }));
