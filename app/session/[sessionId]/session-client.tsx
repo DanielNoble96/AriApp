@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { completeSet, addExtraSet, removeSet } from "@/actions/sets";
 import { resetSession, completeSession, beginSession, pauseSession, resumeSession } from "@/actions/sessions";
 import { swapGroupLift } from "@/actions/lift-swap";
+import { addCustomAccessory } from "@/actions/custom-accessories";
 import { getSwapPool, type SwapSlot } from "@/lib/lift-swaps";
 import { calcPlateBreakdown, calcPlateChange, formatPlateBreakdown } from "@/lib/plates";
 import { InolWidget } from "./inol-widget";
@@ -14,9 +15,18 @@ import {
   PINK_BUTTON_CLASS,
   DANGER_BUTTON_CLASS,
   CARD_CLASS,
+  INPUT_CLASS,
   PILL_CLASS,
   COMPACT_INPUT_CLASS,
 } from "@/lib/ui";
+
+const ACCESSORY_SUGGESTIONS = [
+  "DB Curls",
+  "DB Shrug",
+  "Lat Pulldown",
+  "Lateral Dumbbell Row",
+  "Single Arm Tricep Extension",
+];
 
 interface SetRow {
   id: string;
@@ -135,6 +145,8 @@ export function SessionClient({
   const [timerError, setTimerError] = useState<string | null>(null);
   const [addSetError, setAddSetError] = useState<string | null>(null);
   const [swapError, setSwapError] = useState<string | null>(null);
+  const [customAccessoryDraft, setCustomAccessoryDraft] = useState("");
+  const [addAccessoryError, setAddAccessoryError] = useState<string | null>(null);
   const [alertedAnchorMs, setAlertedAnchorMs] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -367,6 +379,32 @@ export function SessionClient({
           return u ? { ...r, ...u } : r;
         });
       });
+    });
+  }
+
+  function handleAddCustomAccessory(name: string) {
+    setAddAccessoryError(null);
+    startTransition(async () => {
+      let newRow;
+      try {
+        newRow = await addCustomAccessory(sessionId, name);
+      } catch (err) {
+        setAddAccessoryError(err instanceof Error ? err.message : "Couldn't add that accessory -- try again.");
+        return;
+      }
+      setRows((prev) => [
+        ...prev,
+        {
+          ...newRow,
+          liftRole: newRow.liftRole as SetRow["liftRole"],
+          equipmentType: newRow.equipmentType as SetRow["equipmentType"],
+          setType: newRow.setType as SetRow["setType"],
+          actualWeight: null,
+          actualReps: null,
+          completedAt: null,
+        },
+      ]);
+      setCustomAccessoryDraft("");
     });
   }
 
@@ -685,6 +723,43 @@ export function SessionClient({
           </div>
         );
       })}
+
+      <div className={`${CARD_CLASS} mt-3 flex flex-col gap-2 bg-brutal-white p-3`}>
+        <h2 className="text-sm font-bold uppercase tracking-wide opacity-70">Add Accessory</h2>
+        <div className="flex flex-wrap gap-2">
+          {ACCESSORY_SUGGESTIONS.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              disabled={isPending}
+              onClick={() => handleAddCustomAccessory(suggestion)}
+              className={`${PILL_CLASS} bg-brutal-yellow`}
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            className={`${INPUT_CLASS} flex-1 text-sm`}
+            placeholder="Custom accessory..."
+            value={customAccessoryDraft}
+            onChange={(e) => setCustomAccessoryDraft(e.target.value)}
+          />
+          <button
+            type="button"
+            disabled={isPending || !customAccessoryDraft.trim()}
+            onClick={() => handleAddCustomAccessory(customAccessoryDraft)}
+            className={`px-3 text-sm ${BUTTON_CLASS}`}
+          >
+            Add
+          </button>
+        </div>
+        {addAccessoryError && (
+          <p className="text-xs font-bold text-red-600">{addAccessoryError}</p>
+        )}
+      </div>
     </div>
   );
 }
