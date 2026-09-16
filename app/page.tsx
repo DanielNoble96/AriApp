@@ -2,11 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getActiveCycle, getSessionsForCycle, getAccessoryDaysForCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
-import { logout } from "@/actions/auth";
 import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
 import { DAY_LABELS, DAY_DISPLAY_ORDER } from "@/lib/constants";
 import { AccessoryDayForm } from "./accessory-day-form";
 import { AccessoryDayRow } from "./accessory-day-row";
+import { Sidebar } from "./sidebar";
 
 // This page reads live DB state (active cycle, session progress) and has no
 // request-time API of its own, so without this it could get statically
@@ -35,20 +35,13 @@ export default async function Home() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Pretty Heavy</h1>
-        <div className="flex items-center gap-2">
-          <Link href="/cycle/setup" className={`${PILL_CLASS} bg-brutal-yellow`}>
-            New Cycle
-          </Link>
-          <Link href="/feed" className={`${PILL_CLASS} bg-brutal-cyan`}>
-            Feed
-          </Link>
-          <form action={logout}>
-            <button type="submit" className={`${PILL_CLASS} bg-brutal-cyan`}>
-              Log Out
-            </button>
-          </form>
+        <div className="flex items-center gap-3">
+          <Sidebar />
+          <h1 className="text-3xl font-bold tracking-tight">Pretty Heavy</h1>
         </div>
+        <Link href="/feed" className={`${PILL_CLASS} bg-brutal-cyan`}>
+          Feed
+        </Link>
       </div>
 
       {!activeCycle ? (
@@ -116,12 +109,6 @@ export default async function Home() {
           </div>
         </>
       )}
-
-      <p className="text-center text-xs font-medium opacity-60">
-        <Link href="/about" className="underline">
-          About this app
-        </Link>
-      </p>
     </main>
   );
 }
