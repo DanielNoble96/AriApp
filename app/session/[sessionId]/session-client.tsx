@@ -220,27 +220,19 @@ export function SessionClient({
   function handlePauseToggle() {
     setTimerError(null);
     const wasPaused = isPaused;
-    const pauseStartedAt = pausedAt;
     startTransition(async () => {
+      let result;
       try {
-        if (wasPaused) {
-          await resumeSession(sessionId);
-        } else {
-          await pauseSession(sessionId);
-        }
+        result = wasPaused ? await resumeSession(sessionId) : await pauseSession(sessionId);
       } catch {
         setTimerError("Couldn't update the pause state -- try again.");
         return;
       }
-      if (wasPaused) {
-        const pausedDuration = pauseStartedAt
-          ? Math.max(0, Math.floor((Date.now() - pauseStartedAt.getTime()) / 1000))
-          : 0;
-        setPausedSeconds((prev) => prev + pausedDuration);
-        setPausedAt(null);
-      } else {
-        setPausedAt(new Date());
-      }
+      // Sync to whatever the server actually saved rather than guessing --
+      // keeps the button correct even if it was already out of sync (a
+      // stale cached page, another tab/device, etc.).
+      setPausedAt(result.pausedAt);
+      setPausedSeconds(result.pausedSeconds);
     });
   }
 

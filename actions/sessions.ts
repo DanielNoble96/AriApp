@@ -109,29 +109,51 @@ export async function beginSession(sessionId: string) {
     .where(eq(sessions.id, sessionId));
 }
 
-/** Freezes the elapsed/rest timers by recording when the pause began. */
+/**
+ * Freezes the elapsed/rest timers by recording when the pause began.
+ * Returns the resulting pausedAt/pausedSeconds so the caller can sync its
+ * local state to what was actually saved, rather than guessing -- if this
+ * is a no-op (already paused, or a stale client re-sending an old click),
+ * the caller still gets back the true current values instead of drifting.
+ */
 export async function pauseSession(sessionId: string) {
   const session = await loadOwnedSession(sessionId);
-  if (session.status !== "in_progress" || session.pausedAt != null) return;
+  if (session.status !== "in_progress" || session.pausedAt != null) {
+    return { pausedAt: session.pausedAt, pausedSeconds: session.pausedSeconds };
+  }
 
-  await db.update(sessions).set({ pausedAt: new Date() }).where(eq(sessions.id, sessionId));
+  const [updated] = await db
+    .update(sessions)
+    .set({ pausedAt: new Date() })
+    .where(eq(sessions.id, sessionId))
+    .returning();
+  return { pausedAt: updated.pausedAt, pausedSeconds: updated.pausedSeconds };
 }
 
-/** Folds the just-finished pause into the accumulated total and unfreezes the timers. */
+/**
+ * Folds the just-finished pause into the accumulated total and unfreezes
+ * the timers. Returns the resulting pausedAt/pausedSeconds for the same
+ * reason as pauseSession -- the client syncs to this instead of computing
+ * its own guess, so a stale/mismatched client state can't get stuck.
+ */
 export async function resumeSession(sessionId: string) {
   const session = await loadOwnedSession(sessionId);
-  if (session.pausedAt == null) return;
+  if (session.pausedAt == null) {
+    return { pausedAt: null, pausedSeconds: session.pausedSeconds };
+  }
 
   const pausedDurationSeconds = Math.max(
     0,
     Math.floor((Date.now() - session.pausedAt.getTime()) / 1000)
   );
 
-  await db
+  const [updated] = await db
     .update(sessions)
     .set({
       pausedAt: null,
       pausedSeconds: session.pausedSeconds + pausedDurationSeconds,
     })
-    .where(eq(sessions.id, sessionId));
+    .where(eq(sessions.id, sessionId))
+    .returning();
+  return { pausedAt: updated.pausedAt, pausedSeconds: updated.pausedSeconds };
 }
