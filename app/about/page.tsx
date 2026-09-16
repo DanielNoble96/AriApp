@@ -4,7 +4,7 @@ import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES } from "@/lib/ui";
 const FEATURES = [
   {
     title: "5/3/1 Program",
-    body: "A 4-day, 3-week training cycle with automatic weight calculations from your training maxes -- warm-ups, work sets, and assistance work, all worked out for you.",
+    body: "A 4-day, 3-week training cycle with automatic weight calculations from your training maxes. Warm-ups, work sets, and assistance work are all worked out for you.",
   },
   {
     title: "Live Workout Tracking",
@@ -20,7 +20,7 @@ const FEATURES = [
   },
   {
     title: "Social Feed",
-    body: "Every completed workout -- and every accessory day -- posts to a feed your friends can see, comment on, and cheer you on in.",
+    body: "Every completed workout, and every accessory day, posts to a feed your friends can see, comment on, and cheer you on in.",
   },
   {
     title: "Accessory Days",
@@ -41,9 +41,32 @@ export default function AboutPage() {
       <div className={`${CARD_CLASS} bg-brutal-yellow p-6`}>
         <h2 className="text-2xl font-bold">Pretty Heavy</h2>
         <p className="mt-2 text-sm font-medium">
-          A mobile-first strength training app for running a customized 5/3/1 program --
+          A mobile-first strength training app for running a customized 5/3/1 program, with
           automatic weight math, live set tracking, and a feed to share it all with friends.
         </p>
+      </div>
+
+      <div className={`${CARD_CLASS} bg-brutal-white p-6`}>
+        <h2 className="text-xl font-bold">Finding Your Training Max</h2>
+        <div className="mt-2 flex flex-col gap-2 text-sm font-medium">
+          <p>
+            Every cycle starts with a training max for each main and assistance lift. That number
+            drives all the weight math, so it&apos;s worth getting right.
+          </p>
+          <p>
+            Start with your true 1-rep max: the heaviest weight you can lift once with good form.
+            If you don&apos;t know it exactly, estimate it from a recent hard set of a few reps
+            using the Epley formula, the same one this app uses to detect PRs on the feed:
+          </p>
+          <p className={`${CARD_CLASS} bg-brutal-cyan px-3 py-2 text-center font-bold`}>
+            1RM ≈ weight × (1 + reps ÷ 30)
+          </p>
+          <p>
+            Take 90% of that number, and that&apos;s your training max. Working from 90% instead
+            of your true max keeps every prescribed set a little short of your limit, which is
+            what makes the program sustainable cycle after cycle.
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">
