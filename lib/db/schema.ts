@@ -45,6 +45,7 @@ export const users = pgTable("users", {
   // Null until the account is claimed with a password (see the signup
   // "claim" flow for the originally-seeded single-user account).
   passwordHash: text("password_hash"),
+  username: text("username").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -214,5 +215,72 @@ export const sets = pgTable("sets", {
   actualWeight: numeric("actual_weight", { precision: 6, scale: 2 }),
   actualReps: integer("actual_reps"),
   completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const friendRequestStatusEnum = pgEnum("friend_request_status", ["pending", "accepted"]);
+
+// A single directional row per friend pair. "Accepted" makes the friendship
+// symmetric despite the row's direction -- see lib/db/social-queries.ts's
+// getFriendIds, which checks both requesterId and addresseeId. Declining a
+// request just deletes the row rather than storing a "declined" status, so
+// a new request can be sent again later.
+export const friendRequests = pgTable(
+  "friend_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    requesterId: uuid("requester_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    addresseeId: uuid("addressee_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: friendRequestStatusEnum("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique().on(table.requesterId, table.addresseeId)]
+);
+
+// One row per completed session -- created automatically by
+// actions/sessions.ts's completeSession. inolScore is a snapshot computed
+// at creation time (not recomputed live), since resetSession can later wipe
+// the underlying sets; resetSession deletes this row entirely in that case.
+export const posts = pgTable("posts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id")
+    .notNull()
+    .unique()
+    .references(() => sessions.id, { onDelete: "cascade" }),
+  inolScore: numeric("inol_score", { precision: 6, scale: 3 }).notNull(),
+  caption: text("caption"),
+  photoUrl: text("photo_url"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Personal records hit in a post's session, snapshotted at creation time
+// (see lib/prs.ts for the estimated-1RM comparison that produces these).
+export const postPrs = pgTable("post_prs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id")
+    .notNull()
+    .references(() => posts.id, { onDelete: "cascade" }),
+  liftName: text("lift_name").notNull(),
+  weight: numeric("weight", { precision: 6, scale: 2 }).notNull(),
+  reps: integer("reps").notNull(),
+  estimatedOneRepMax: numeric("estimated_one_rep_max", { precision: 6, scale: 2 }).notNull(),
+});
+
+export const comments = pgTable("comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id")
+    .notNull()
+    .references(() => posts.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

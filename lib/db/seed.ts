@@ -8,7 +8,7 @@ import { seedProgramForUser } from "./seed-user";
 const SEED_USER_EMAIL = "ari@afterpartymedia.com";
 
 async function seed() {
-  await db.insert(users).values({ email: SEED_USER_EMAIL, name: "Ari" }).onConflictDoNothing({
+  await db.insert(users).values({ email: SEED_USER_EMAIL, name: "Ari", username: "ari" }).onConflictDoNothing({
     target: users.email,
   });
   const [user] = await db.select().from(users).where(eq(users.email, SEED_USER_EMAIL));

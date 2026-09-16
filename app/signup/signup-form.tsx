@@ -8,6 +8,7 @@ import { INPUT_CLASS, BUTTON_CLASS } from "@/lib/ui";
 export function SignupForm() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +18,7 @@ export function SignupForm() {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await signup(email, password, name);
+      const result = await signup(email, password, name, username);
       if (!result.success) {
         setError(result.error);
         return;
@@ -36,6 +37,14 @@ export function SignupForm() {
         className={INPUT_CLASS}
         value={name}
         onChange={(e) => setName(e.target.value)}
+      />
+      <input
+        type="text"
+        required
+        placeholder="Username (letters, numbers, underscores)"
+        className={INPUT_CLASS}
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
       />
       <input
         type="email"

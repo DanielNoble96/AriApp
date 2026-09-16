@@ -17,11 +17,18 @@ function isAllowedEmail(email: string): boolean {
   return allowlist.includes(email.toLowerCase());
 }
 
+const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
+
 // TODO: no email verification -- signup trusts whatever email is typed in,
 // with no confirmation link sent. Security currently relies entirely on the
 // allowlist + password. Fine for a small group of trusted people; revisit
 // (needs an email-sending service like Resend) if that stops being true.
-export async function signup(email: string, password: string, name: string): Promise<AuthResult> {
+export async function signup(
+  email: string,
+  password: string,
+  name: string,
+  username: string
+): Promise<AuthResult> {
   if (!email || !password) {
     return { success: false, error: "Email and password are required." };
   }
@@ -40,13 +47,30 @@ export async function signup(email: string, password: string, name: string): Pro
       return { success: false, error: "An account with this email already exists. Log in instead." };
     }
     // Claim flow: attach a password to a pre-existing, unclaimed account
-    // (e.g. the originally seeded user), preserving all of its data.
+    // (e.g. the originally seeded user), preserving all of its data. The
+    // account already has a username from the backfill -- the submitted
+    // one is ignored here on purpose.
     await db.update(users).set({ passwordHash }).where(eq(users.id, existing.id));
     await createSession(existing.id);
     return { success: true };
   }
 
-  const [user] = await db.insert(users).values({ email, name, passwordHash }).returning();
+  const normalizedUsername = username.trim().toLowerCase();
+  if (!USERNAME_PATTERN.test(normalizedUsername)) {
+    return {
+      success: false,
+      error: "Username must be 3-20 characters: lowercase letters, numbers, and underscores only.",
+    };
+  }
+  const [usernameTaken] = await db.select().from(users).where(eq(users.username, normalizedUsername));
+  if (usernameTaken) {
+    return { success: false, error: "That username is taken." };
+  }
+
+  const [user] = await db
+    .insert(users)
+    .values({ email, name, passwordHash, username: normalizedUsername })
+    .returning();
   await seedProgramForUser(user.id);
   await createSession(user.id);
   return { success: true };
