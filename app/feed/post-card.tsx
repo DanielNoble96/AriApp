@@ -20,6 +20,10 @@ function fmt(value: string): string {
   return String(Number(value));
 }
 
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
 function formatDuration(totalMinutes: number): string {
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
@@ -80,9 +84,7 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
             <span className="text-xs font-medium opacity-70">{ACCESSORY_ACTIVITY_LABELS[post.activityType]}</span>
           )
         ) : (
-          <span className="text-xs font-medium opacity-70">
-            Week {post.weekNumber}, Day {post.dayNumber} — {post.dayName}
-          </span>
+          <span className="text-xs font-medium opacity-70">{formatDate(post.createdAt)}</span>
         )}
       </div>
       <p className="mt-1 text-sm font-medium opacity-80">
