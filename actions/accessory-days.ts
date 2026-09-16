@@ -55,3 +55,15 @@ export async function logAccessoryDay(input: LogAccessoryDayInput) {
 
   return entry;
 }
+
+/** Deletes an accessory day entry, cascading to its feed post (and that post's comments). */
+export async function deleteAccessoryDay(entryId: string) {
+  const user = await getSessionUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const [entry] = await db.select().from(accessoryDayEntries).where(eq(accessoryDayEntries.id, entryId));
+  if (!entry) throw new Error("Entry not found");
+  if (entry.userId !== user.id) throw new Error("Forbidden");
+
+  await db.delete(accessoryDayEntries).where(eq(accessoryDayEntries.id, entryId));
+}

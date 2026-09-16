@@ -6,6 +6,7 @@ import { logout } from "@/actions/auth";
 import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
 import { DAY_LABELS, DAY_DISPLAY_ORDER, ACCESSORY_ACTIVITY_LABELS } from "@/lib/constants";
 import { AccessoryDayForm } from "./accessory-day-form";
+import { AccessoryDayRow } from "./accessory-day-row";
 
 // This page reads live DB state (active cycle, session progress) and has no
 // request-time API of its own, so without this it could get statically
@@ -113,20 +114,19 @@ export default async function Home() {
                       </Link>
                     ))}
                     {weekAccessoryDays.map((entry) => (
-                      <div
+                      <AccessoryDayRow
                         key={entry.id}
-                        className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} flex items-center justify-between rounded-lg bg-brutal-white p-3 opacity-60`}
-                      >
-                        <span className="font-bold">{ACCESSORY_ACTIVITY_LABELS[entry.activityType]}</span>
-                        <span className="text-xs font-medium opacity-70">
-                          {[
+                        id={entry.id}
+                        label={ACCESSORY_ACTIVITY_LABELS[entry.activityType]}
+                        summary={
+                          [
                             entry.durationMinutes != null ? formatDuration(entry.durationMinutes) : null,
                             entry.distanceMiles != null ? `${Number(entry.distanceMiles)} mi` : null,
                           ]
                             .filter(Boolean)
-                            .join(" · ") || "Logged"}
-                        </span>
-                      </div>
+                            .join(" · ") || "Logged"
+                        }
+                      />
                     ))}
                     <AccessoryDayForm cycleId={activeCycle.id} weekNumber={weekNumber} />
                   </div>
