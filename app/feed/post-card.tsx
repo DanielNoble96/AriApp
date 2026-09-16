@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updatePostCaption, uploadPostPhoto, removePostPhoto } from "@/actions/posts";
+import { upload } from "@vercel/blob/client";
+import { updatePostCaption, confirmPostPhoto, removePostPhoto } from "@/actions/posts";
 import { addComment } from "@/actions/comments";
 import { getInolTier, INOL_TIER_LABEL, type InolTier } from "@/lib/inol";
 import { CARD_CLASS, INPUT_CLASS, BUTTON_CLASS, PILL_CLASS, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
@@ -64,12 +65,23 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("File must be an image.");
+      return;
+    }
     setError(null);
-    const formData = new FormData();
-    formData.set("photo", file);
     startTransition(async () => {
       try {
-        await uploadPostPhoto(post.id, formData);
+        // Uploads straight from the browser to Blob storage, bypassing this
+        // app's own server entirely for the file bytes -- Vercel's
+        // serverless functions cap request bodies around 4.5MB regardless
+        // of Next.js's own configured limit, well under a real photo.
+        const blob = await upload(`post-photos/${post.id}`, file, {
+          access: "private",
+          handleUploadUrl: "/api/photos/upload-handler",
+          clientPayload: post.id,
+        });
+        await confirmPostPhoto(post.id, blob.pathname);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Couldn't upload photo.");
         return;

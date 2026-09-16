@@ -1,7 +1,7 @@
 "use server";
 
 import { eq, count } from "drizzle-orm";
-import { put, del } from "@vercel/blob";
+import { del } from "@vercel/blob";
 import { db } from "@/lib/db";
 import { posts, postPhotos } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
@@ -18,7 +18,6 @@ export async function updatePostCaption(postId: string, caption: string) {
   await db.update(posts).set({ caption: trimmed || null }).where(eq(posts.id, postId));
 }
 
-const MAX_PHOTO_BYTES = 8 * 1024 * 1024; // 8MB
 const MAX_PHOTOS_PER_POST = 3;
 
 /** Pulls the Blob pathname back out of the app/api/photos serving URL stored on a photo row. */
@@ -26,8 +25,13 @@ function pathnameFromPhotoUrl(photoUrl: string): string | null {
   return new URL(photoUrl, "http://internal").searchParams.get("pathname");
 }
 
-/** Adds a photo to a post, up to MAX_PHOTOS_PER_POST. */
-export async function uploadPostPhoto(postId: string, formData: FormData) {
+/**
+ * Records a photo the browser already uploaded directly to Blob storage
+ * (see app/api/photos/upload-handler/route.ts) -- this only ever receives
+ * a pathname, never the file bytes, so it isn't subject to the serverless
+ * function body-size limit a direct file upload here would hit.
+ */
+export async function confirmPostPhoto(postId: string, pathname: string) {
   const user = await getSessionUser();
   if (!user) throw new Error("Not signed in.");
 
@@ -43,27 +47,7 @@ export async function uploadPostPhoto(postId: string, formData: FormData) {
     throw new Error(`You can only add up to ${MAX_PHOTOS_PER_POST} photos.`);
   }
 
-  const file = formData.get("photo");
-  if (!(file instanceof File) || file.size === 0) {
-    throw new Error("No photo provided.");
-  }
-  if (!file.type.startsWith("image/")) {
-    throw new Error("File must be an image.");
-  }
-  if (file.size > MAX_PHOTO_BYTES) {
-    throw new Error("Image must be under 8MB.");
-  }
-
-  // The Blob store is private (locked in at creation, can't be switched to
-  // public), so the stored "photoUrl" is actually our own serving route
-  // (app/api/photos/route.ts), not the blob's own URL -- that route reads
-  // it back from the store server-side with the token, using this pathname.
-  const blob = await put(`post-photos/${postId}`, file, {
-    access: "private",
-    addRandomSuffix: true,
-  });
-
-  const photoUrl = `/api/photos?pathname=${encodeURIComponent(blob.pathname)}`;
+  const photoUrl = `/api/photos?pathname=${encodeURIComponent(pathname)}`;
   const [photo] = await db.insert(postPhotos).values({ postId, photoUrl }).returning();
   return { id: photo.id, photoUrl };
 }
