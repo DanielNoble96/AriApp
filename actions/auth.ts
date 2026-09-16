@@ -6,10 +6,9 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { hashPassword, verifyPassword, createSession, destroySession } from "@/lib/auth";
 import { seedProgramForUser } from "@/lib/db/seed-user";
+import { USERNAME_PATTERN } from "@/lib/constants";
 
 type AuthResult = { success: true } | { success: false; error: string };
-
-const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
 // TODO: no email verification -- signup trusts whatever email is typed in,
 // with no confirmation link sent. Open to anyone (no allowlist) as of the

@@ -3,7 +3,7 @@
 import { eq, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { cycles, cycleLiftTms, cycleAssistanceConfig, sessions, sets, lifts } from "@/lib/db/schema";
-import { getLiftsForUser } from "@/lib/db/queries";
+import { getLiftsForUser, getActiveCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
 import {
   buildSessionSetPlan,
@@ -51,15 +51,29 @@ export async function createCycle(input: CreateCycleInput) {
     .limit(1);
   const cycleNumber = (lastCycle?.cycleNumber ?? 0) + 1;
 
+  // Starting a new cycle is the only thing that ever completes the previous
+  // one -- there's no separate "Complete Cycle" action. Captured before the
+  // try block so the catch below can revert it if the new cycle fails to
+  // fully create.
+  const previousActiveCycle = await getActiveCycle(user.id);
+
   // TODO(multi-user): neon-http has no interactive transaction support, so
   // these writes run sequentially instead of atomically. As a stand-in, any
-  // failure below deletes the cycle row, which cascades to clean up
-  // everything created for it. Once we're on multiple users, replace this
-  // whole block with a real transaction via drizzle-orm/neon-serverless
-  // (the websocket/Pool driver, which does support db.transaction()).
+  // failure below deletes the cycle row (and reverts the previous cycle's
+  // completion, if any), which cascades to clean up everything created for
+  // it. Once we're on multiple users, replace this whole block with a real
+  // transaction via drizzle-orm/neon-serverless (the websocket/Pool driver,
+  // which does support db.transaction()).
   let cycleId: string | undefined;
 
   try {
+    if (previousActiveCycle) {
+      await db
+        .update(cycles)
+        .set({ status: "completed", completedAt: new Date() })
+        .where(eq(cycles.id, previousActiveCycle.id));
+    }
+
     const [cycle] = await db
       .insert(cycles)
       .values({
@@ -158,6 +172,13 @@ export async function createCycle(input: CreateCycleInput) {
   } catch (err) {
     if (cycleId) {
       await db.delete(cycles).where(eq(cycles.id, cycleId)).catch(() => {});
+    }
+    if (previousActiveCycle) {
+      await db
+        .update(cycles)
+        .set({ status: "active", completedAt: null })
+        .where(eq(cycles.id, previousActiveCycle.id))
+        .catch(() => {});
     }
     throw err;
   }

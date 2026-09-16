@@ -1,4 +1,4 @@
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, desc } from "drizzle-orm";
 import { db } from "./index";
 import { lifts, programDays, cycles, sessions, sets, accessoryDayEntries } from "./schema";
 
@@ -23,10 +23,15 @@ export async function getLiftsForUser(userId: string) {
 }
 
 export async function getActiveCycle(userId: string) {
+  // Ordering is defense-in-depth: createCycle always completes any prior
+  // active cycle before starting a new one, so there should only ever be
+  // one, but this guarantees the newest wins if that invariant is ever
+  // violated rather than an arbitrary row.
   const [cycle] = await db
     .select()
     .from(cycles)
     .where(and(eq(cycles.userId, userId), eq(cycles.status, "active")))
+    .orderBy(desc(cycles.cycleNumber))
     .limit(1);
   return cycle ?? null;
 }
