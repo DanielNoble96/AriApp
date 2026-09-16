@@ -1,8 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SignupForm } from "./signup-form";
+import { getSessionUser } from "@/lib/auth";
 import { CARD_CLASS, PILL_CLASS } from "@/lib/ui";
 
-export default function SignupPage() {
+// Reads the session cookie -- must not be statically prerendered.
+export const dynamic = "force-dynamic";
+
+export default async function SignupPage() {
+  const user = await getSessionUser();
+  if (user) redirect("/");
+
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-6">
       <h1 className="text-center text-5xl font-bold tracking-tight text-brutal-black">
