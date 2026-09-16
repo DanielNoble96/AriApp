@@ -4,7 +4,7 @@ import { getActiveCycle, getSessionsForCycle, getAccessoryDaysForCycle } from "@
 import { getSessionUser } from "@/lib/auth";
 import { logout } from "@/actions/auth";
 import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
-import { DAY_LABELS, DAY_DISPLAY_ORDER, ACCESSORY_ACTIVITY_LABELS } from "@/lib/constants";
+import { DAY_LABELS, DAY_DISPLAY_ORDER } from "@/lib/constants";
 import { AccessoryDayForm } from "./accessory-day-form";
 import { AccessoryDayRow } from "./accessory-day-row";
 
@@ -18,14 +18,6 @@ const STATUS_LABEL: Record<string, string> = {
   in_progress: "In progress",
   completed: "Done",
 };
-
-function formatDuration(totalMinutes: number): string {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  if (h === 0) return `${m} min`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
-}
 
 export default async function Home() {
   const user = await getSessionUser();
@@ -114,19 +106,7 @@ export default async function Home() {
                       </Link>
                     ))}
                     {weekAccessoryDays.map((entry) => (
-                      <AccessoryDayRow
-                        key={entry.id}
-                        id={entry.id}
-                        label={ACCESSORY_ACTIVITY_LABELS[entry.activityType]}
-                        summary={
-                          [
-                            entry.durationMinutes != null ? formatDuration(entry.durationMinutes) : null,
-                            entry.distanceMiles != null ? `${Number(entry.distanceMiles)} mi` : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ") || "Logged"
-                        }
-                      />
+                      <AccessoryDayRow key={entry.id} entry={entry} />
                     ))}
                     <AccessoryDayForm cycleId={activeCycle.id} weekNumber={weekNumber} />
                   </div>

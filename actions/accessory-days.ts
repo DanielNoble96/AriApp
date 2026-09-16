@@ -56,6 +56,31 @@ export async function logAccessoryDay(input: LogAccessoryDayInput) {
   return entry;
 }
 
+export interface UpdateAccessoryDayInput {
+  activityType: AccessoryActivityType;
+  durationMinutes: number | null;
+  distanceMiles: number | null;
+}
+
+/** Edits an already-logged accessory day's activity/duration/distance. Caption editing lives on the post itself (actions/posts.ts). */
+export async function updateAccessoryDay(entryId: string, input: UpdateAccessoryDayInput) {
+  const user = await getSessionUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const [entry] = await db.select().from(accessoryDayEntries).where(eq(accessoryDayEntries.id, entryId));
+  if (!entry) throw new Error("Entry not found");
+  if (entry.userId !== user.id) throw new Error("Forbidden");
+
+  await db
+    .update(accessoryDayEntries)
+    .set({
+      activityType: input.activityType,
+      durationMinutes: input.durationMinutes,
+      distanceMiles: input.distanceMiles != null ? String(input.distanceMiles) : null,
+    })
+    .where(eq(accessoryDayEntries.id, entryId));
+}
+
 /** Deletes an accessory day entry, cascading to its feed post (and that post's comments). */
 export async function deleteAccessoryDay(entryId: string) {
   const user = await getSessionUser();
