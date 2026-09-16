@@ -175,7 +175,11 @@ export function SessionClient({
   }, [restSeconds, restTargetSeconds, restAnchorMs, alertedAnchorMs]);
 
   function handleReset() {
-    if (!confirm("Reset this session? This clears every logged set back to blank.")) {
+    if (
+      !confirm(
+        "Reset this session? This clears every logged set back to blank and removes it from your feed if you already posted it."
+      )
+    ) {
       return;
     }
     setResetError(null);
