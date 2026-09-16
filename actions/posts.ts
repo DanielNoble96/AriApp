@@ -43,11 +43,16 @@ export async function uploadPostPhoto(postId: string, formData: FormData) {
     throw new Error("Image must be under 8MB.");
   }
 
+  // The Blob store is private (locked in at creation, can't be switched to
+  // public), so the stored "photoUrl" is actually our own serving route
+  // (app/api/photos/route.ts), not the blob's own URL -- that route reads
+  // it back from the store server-side with the token, using this pathname.
   const blob = await put(`post-photos/${postId}`, file, {
-    access: "public",
+    access: "private",
     addRandomSuffix: true,
   });
 
-  await db.update(posts).set({ photoUrl: blob.url }).where(eq(posts.id, postId));
-  return { photoUrl: blob.url };
+  const photoUrl = `/api/photos?pathname=${encodeURIComponent(blob.pathname)}`;
+  await db.update(posts).set({ photoUrl }).where(eq(posts.id, postId));
+  return { photoUrl };
 }
