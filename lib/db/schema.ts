@@ -245,16 +245,53 @@ export const friendRequests = pgTable(
 // actions/sessions.ts's completeSession. inolScore is a snapshot computed
 // at creation time (not recomputed live), since resetSession can later wipe
 // the underlying sets; resetSession deletes this row entirely in that case.
+export const accessoryActivityTypeEnum = pgEnum("accessory_activity_type", [
+  "run",
+  "bike",
+  "swim",
+  "walk",
+  "yoga",
+  "pilates",
+  "tennis",
+  "pickleball",
+  "paddle",
+  "trail_run",
+]);
+
+// A freeform cross-training/cardio entry, independent of the 4 fixed
+// program days -- any number can be added per week. Not scored for INOL
+// and never eligible for PRs (see actions/accessory-days.ts).
+export const accessoryDayEntries = pgTable("accessory_day_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  cycleId: uuid("cycle_id")
+    .notNull()
+    .references(() => cycles.id, { onDelete: "cascade" }),
+  weekNumber: integer("week_number").notNull(),
+  activityType: accessoryActivityTypeEnum("activity_type").notNull(),
+  durationMinutes: integer("duration_minutes"),
+  distanceMiles: numeric("distance_miles", { precision: 6, scale: 2 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// A post is either a lifting-session post OR an accessory-day post --
+// exactly one of sessionId/accessoryDayEntryId is set, enforced at the
+// application level (actions/sessions.ts, actions/accessory-days.ts)
+// rather than a DB constraint. inolScore is null for accessory-day posts.
 export const posts = pgTable("posts", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   sessionId: uuid("session_id")
-    .notNull()
     .unique()
     .references(() => sessions.id, { onDelete: "cascade" }),
-  inolScore: numeric("inol_score", { precision: 6, scale: 3 }).notNull(),
+  accessoryDayEntryId: uuid("accessory_day_entry_id")
+    .unique()
+    .references(() => accessoryDayEntries.id, { onDelete: "cascade" }),
+  inolScore: numeric("inol_score", { precision: 6, scale: 3 }),
   caption: text("caption"),
   photoUrl: text("photo_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

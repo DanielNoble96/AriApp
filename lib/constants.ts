@@ -57,3 +57,42 @@ export const DAY_LABELS: Record<number, string> = {
   3: "Glutes",
   4: "Back + Abs",
 };
+
+export type AccessoryActivityType =
+  | "run"
+  | "bike"
+  | "swim"
+  | "walk"
+  | "yoga"
+  | "pilates"
+  | "tennis"
+  | "pickleball"
+  | "paddle"
+  | "trail_run";
+
+// Display order for the activity-type picker when logging an accessory day.
+export const ACCESSORY_ACTIVITY_OPTIONS: AccessoryActivityType[] = [
+  "run",
+  "bike",
+  "swim",
+  "walk",
+  "yoga",
+  "pilates",
+  "tennis",
+  "pickleball",
+  "paddle",
+  "trail_run",
+];
+
+export const ACCESSORY_ACTIVITY_LABELS: Record<AccessoryActivityType, string> = {
+  run: "Run",
+  bike: "Bike",
+  swim: "Swim",
+  walk: "Walk",
+  yoga: "Yoga",
+  pilates: "Pilates",
+  tennis: "Tennis",
+  pickleball: "Pickleball",
+  paddle: "Paddle",
+  trail_run: "Trail Run",
+};

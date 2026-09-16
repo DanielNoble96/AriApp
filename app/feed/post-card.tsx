@@ -6,6 +6,7 @@ import { updatePostCaption } from "@/actions/posts";
 import { addComment } from "@/actions/comments";
 import { getInolTier, INOL_TIER_LABEL, type InolTier } from "@/lib/inol";
 import { CARD_CLASS, INPUT_CLASS, BUTTON_CLASS, PILL_CLASS } from "@/lib/ui";
+import { ACCESSORY_ACTIVITY_LABELS } from "@/lib/constants";
 import type { FeedPost } from "@/lib/db/social-queries";
 
 const TIER_BG: Record<InolTier, string> = {
@@ -19,6 +20,14 @@ function fmt(value: string): string {
   return String(Number(value));
 }
 
+function formatDuration(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
 export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserId: string }) {
   const router = useRouter();
   const isOwner = post.userId === currentUserId;
@@ -28,8 +37,9 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const inol = Number(post.inolScore);
-  const tier = getInolTier(inol);
+  const isAccessoryDay = post.kind === "accessory_day";
+  const inol = post.inolScore != null ? Number(post.inolScore) : null;
+  const tier = inol != null ? getInolTier(inol) : null;
 
   function handleSaveCaption() {
     setError(null);
@@ -65,11 +75,31 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
     <div className={`${CARD_CLASS} bg-brutal-white p-4`}>
       <div className="flex items-center justify-between">
         <span className="font-bold">@{post.authorUsername}</span>
-        <span className="text-xs font-medium opacity-70">
-          Week {post.weekNumber}, Day {post.dayNumber} — {post.dayName}
-        </span>
+        {isAccessoryDay ? (
+          post.activityType && (
+            <span className="text-xs font-medium opacity-70">{ACCESSORY_ACTIVITY_LABELS[post.activityType]}</span>
+          )
+        ) : (
+          <span className="text-xs font-medium opacity-70">
+            Week {post.weekNumber}, Day {post.dayNumber} — {post.dayName}
+          </span>
+        )}
       </div>
-      <p className="mt-1 text-sm font-medium opacity-80">completed a workout</p>
+      <p className="mt-1 text-sm font-medium opacity-80">
+        {isAccessoryDay
+          ? `logged ${post.activityType ? ACCESSORY_ACTIVITY_LABELS[post.activityType].toLowerCase() : "an activity"}`
+          : "completed a workout"}
+      </p>
+      {isAccessoryDay && (post.durationMinutes != null || post.distanceMiles != null) && (
+        <p className="text-xs font-medium opacity-70">
+          {[
+            post.durationMinutes != null ? formatDuration(post.durationMinutes) : null,
+            post.distanceMiles != null ? `${fmt(post.distanceMiles)} mi` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      )}
 
       {post.photoUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- external Blob URL, no next/image config in this app
@@ -80,13 +110,15 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
         />
       )}
 
-      <div className={`${CARD_CLASS} ${TIER_BG[tier]} mt-3 flex items-center justify-between p-3`}>
-        <span className="text-xs font-bold uppercase tracking-wide opacity-70">INOL</span>
-        <span className="text-xl font-bold">{inol.toFixed(2)}</span>
-        <span className="text-xs font-bold">{INOL_TIER_LABEL[tier]}</span>
-      </div>
+      {!isAccessoryDay && inol != null && tier != null && (
+        <div className={`${CARD_CLASS} ${TIER_BG[tier]} mt-3 flex items-center justify-between p-3`}>
+          <span className="text-xs font-bold uppercase tracking-wide opacity-70">INOL</span>
+          <span className="text-xl font-bold">{inol.toFixed(2)}</span>
+          <span className="text-xs font-bold">{INOL_TIER_LABEL[tier]}</span>
+        </div>
+      )}
 
-      {post.prs.length > 0 && (
+      {!isAccessoryDay && post.prs.length > 0 && (
         <div className="mt-2 flex flex-col gap-1">
           {post.prs.map((pr, i) => (
             <span key={i} className={`${PILL_CLASS} inline-block w-fit bg-brutal-yellow`}>

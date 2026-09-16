@@ -1,6 +1,6 @@
 import { eq, and, asc } from "drizzle-orm";
 import { db } from "./index";
-import { lifts, programDays, cycles, sessions, sets } from "./schema";
+import { lifts, programDays, cycles, sessions, sets, accessoryDayEntries } from "./schema";
 
 export async function getLiftsForUser(userId: string) {
   return db
@@ -37,6 +37,14 @@ export async function getSessionsForCycle(cycleId: string) {
     .from(sessions)
     .where(eq(sessions.cycleId, cycleId))
     .orderBy(asc(sessions.sequenceIndex));
+}
+
+export async function getAccessoryDaysForCycle(cycleId: string) {
+  return db
+    .select()
+    .from(accessoryDayEntries)
+    .where(eq(accessoryDayEntries.cycleId, cycleId))
+    .orderBy(asc(accessoryDayEntries.createdAt));
 }
 
 export async function getSessionById(sessionId: string) {

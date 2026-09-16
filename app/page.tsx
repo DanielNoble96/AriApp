@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getActiveCycle, getSessionsForCycle } from "@/lib/db/queries";
+import { getActiveCycle, getSessionsForCycle, getAccessoryDaysForCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
 import { logout } from "@/actions/auth";
 import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
-import { DAY_LABELS, DAY_DISPLAY_ORDER } from "@/lib/constants";
+import { DAY_LABELS, DAY_DISPLAY_ORDER, ACCESSORY_ACTIVITY_LABELS } from "@/lib/constants";
+import { AccessoryDayForm } from "./accessory-day-form";
 
 // This page reads live DB state (active cycle, session progress) and has no
 // request-time API of its own, so without this it could get statically
@@ -17,12 +18,21 @@ const STATUS_LABEL: Record<string, string> = {
   completed: "Done",
 };
 
+function formatDuration(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
 export default async function Home() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
   const activeCycle = await getActiveCycle(user.id);
   const cycleSessions = activeCycle ? await getSessionsForCycle(activeCycle.id) : [];
+  const accessoryDays = activeCycle ? await getAccessoryDaysForCycle(activeCycle.id) : [];
   const completedCount = cycleSessions.filter((s) => s.status === "completed").length;
   // Default-open only the current (first not-fully-done) week; collapse the rest.
   const firstIncompleteWeek =
@@ -68,6 +78,7 @@ export default async function Home() {
                 .sort((a, b) => DAY_DISPLAY_ORDER.indexOf(a.dayNumber) - DAY_DISPLAY_ORDER.indexOf(b.dayNumber));
               if (weekSessions.length === 0) return null;
               const weekCompleted = weekSessions.filter((s) => s.status === "completed").length;
+              const weekAccessoryDays = accessoryDays.filter((a) => a.weekNumber === weekNumber);
 
               return (
                 <details
@@ -101,6 +112,23 @@ export default async function Home() {
                         </span>
                       </Link>
                     ))}
+                    {weekAccessoryDays.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} flex items-center justify-between rounded-lg bg-brutal-white p-3 opacity-60`}
+                      >
+                        <span className="font-bold">{ACCESSORY_ACTIVITY_LABELS[entry.activityType]}</span>
+                        <span className="text-xs font-medium opacity-70">
+                          {[
+                            entry.durationMinutes != null ? formatDuration(entry.durationMinutes) : null,
+                            entry.distanceMiles != null ? `${Number(entry.distanceMiles)} mi` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || "Logged"}
+                        </span>
+                      </div>
+                    ))}
+                    <AccessoryDayForm cycleId={activeCycle.id} weekNumber={weekNumber} />
                   </div>
                 </details>
               );

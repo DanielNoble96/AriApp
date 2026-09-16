@@ -1,7 +1,18 @@
 import { eq, and, or, ne, inArray, ilike, desc, asc, isNotNull } from "drizzle-orm";
 import { db } from "./index";
-import { users, friendRequests, sets, sessions, posts, postPrs, comments, programDays } from "./schema";
+import {
+  users,
+  friendRequests,
+  sets,
+  sessions,
+  posts,
+  postPrs,
+  comments,
+  programDays,
+  accessoryDayEntries,
+} from "./schema";
 import { calcEstimated1Rm } from "@/lib/prs";
+import type { AccessoryActivityType } from "@/lib/constants";
 
 /** Accepted friend rows in either direction, returning the *other* party's id. */
 export async function getFriendIds(userId: string): Promise<string[]> {
@@ -144,13 +155,17 @@ export interface FeedPost {
   userId: string;
   authorUsername: string;
   authorName: string | null;
-  inolScore: string;
+  kind: "session" | "accessory_day";
+  inolScore: string | null;
   caption: string | null;
   photoUrl: string | null;
   createdAt: Date;
-  weekNumber: number;
-  dayNumber: number;
-  dayName: string;
+  weekNumber: number | null;
+  dayNumber: number | null;
+  dayName: string | null;
+  activityType: AccessoryActivityType | null;
+  durationMinutes: number | null;
+  distanceMiles: string | null;
   prs: FeedPostPr[];
   comments: FeedPostComment[];
 }
@@ -173,14 +188,18 @@ export async function getFeedPosts(userId: string): Promise<FeedPost[]> {
       weekNumber: sessions.weekNumber,
       dayNumber: sessions.dayNumber,
       dayName: programDays.name,
+      activityType: accessoryDayEntries.activityType,
+      durationMinutes: accessoryDayEntries.durationMinutes,
+      distanceMiles: accessoryDayEntries.distanceMiles,
     })
     .from(posts)
     .innerJoin(users, eq(users.id, posts.userId))
-    .innerJoin(sessions, eq(sessions.id, posts.sessionId))
-    .innerJoin(
+    .leftJoin(sessions, eq(sessions.id, posts.sessionId))
+    .leftJoin(
       programDays,
       and(eq(programDays.userId, sessions.userId), eq(programDays.dayNumber, sessions.dayNumber))
     )
+    .leftJoin(accessoryDayEntries, eq(accessoryDayEntries.id, posts.accessoryDayEntryId))
     .where(inArray(posts.userId, visibleUserIds))
     .orderBy(desc(posts.createdAt))
     .limit(100);
@@ -221,6 +240,7 @@ export async function getFeedPosts(userId: string): Promise<FeedPost[]> {
 
   return postRows.map((p) => ({
     ...p,
+    kind: p.activityType != null ? ("accessory_day" as const) : ("session" as const),
     prs: prsByPost.get(p.id) ?? [],
     comments: commentsByPost.get(p.id) ?? [],
   }));
