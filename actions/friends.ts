@@ -4,6 +4,13 @@ import { eq, and, or } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { friendRequests } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { searchUsersByUsername, type UserSearchResult } from "@/lib/db/social-queries";
+
+export async function searchUsers(query: string): Promise<UserSearchResult[]> {
+  const user = await getSessionUser();
+  if (!user) throw new Error("Not signed in.");
+  return searchUsersByUsername(query, user.id);
+}
 
 /**
  * Sends a friend request, unless one already exists between these two
