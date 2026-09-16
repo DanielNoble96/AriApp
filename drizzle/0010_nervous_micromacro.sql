@@ -1,0 +1,1 @@
+ALTER TABLE "lifts" ADD COLUMN "is_swap_only" boolean DEFAULT false NOT NULL;

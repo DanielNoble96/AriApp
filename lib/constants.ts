@@ -55,14 +55,6 @@ export const DEFAULT_REST_TARGET_WORK_SECONDS = 180;
 // doesn't change which session/exercises a given dayNumber actually is.
 export const DAY_DISPLAY_ORDER = [1, 2, 4, 3];
 
-// Display labels for each of the 4 fixed program days.
-export const DAY_LABELS: Record<number, string> = {
-  1: "Lower Body + Abs",
-  2: "Upper Body",
-  3: "Glutes",
-  4: "Back + Abs",
-};
-
 export type AccessoryActivityType =
   | "run"
   | "bike"

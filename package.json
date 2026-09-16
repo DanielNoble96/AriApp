@@ -12,7 +12,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/seed.ts",
-    "db:backfill-usernames": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-usernames.ts"
+    "db:backfill-usernames": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-usernames.ts",
+    "db:backfill-swap-lifts": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-swap-lifts.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.1.0",

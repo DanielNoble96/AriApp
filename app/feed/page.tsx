@@ -22,7 +22,7 @@ export default async function FeedPage() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Feed</h1>
-        <Link href="/" className={`${PILL_CLASS} bg-brutal-cyan`}>
+        <Link href="/" className={`${PILL_CLASS} bg-brutal-yellow`}>
           ← Home
         </Link>
       </div>

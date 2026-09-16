@@ -3,10 +3,10 @@ import { db } from "./index";
 import { programDays, lifts } from "./schema";
 
 const DAY_DEFS = [
-  { dayNumber: 1, name: "Day 1: Squat" },
-  { dayNumber: 2, name: "Day 2: Bench Press" },
-  { dayNumber: 3, name: "Day 3: Hip Thrust" },
-  { dayNumber: 4, name: "Day 4: Bent-Over Row" },
+  { dayNumber: 1, name: "Day 1" },
+  { dayNumber: 2, name: "Day 2" },
+  { dayNumber: 3, name: "Day 3" },
+  { dayNumber: 4, name: "Day 4" },
 ] as const;
 
 // Cable Crunches appears on both Day 1 and Day 4 in the program, but a lift
@@ -22,6 +22,7 @@ const LIFT_DEFS = [
     equipmentType: "barbell",
     dayNumber: 1,
     order: 1,
+    isSwapOnly: false,
   },
   {
     slug: "deadlift",
@@ -31,6 +32,7 @@ const LIFT_DEFS = [
     equipmentType: "barbell",
     dayNumber: 1,
     order: 2,
+    isSwapOnly: false,
   },
   {
     slug: "calf-raise",
@@ -40,6 +42,7 @@ const LIFT_DEFS = [
     equipmentType: null,
     dayNumber: 1,
     order: 3,
+    isSwapOnly: false,
   },
   {
     slug: "cable-crunch-day1",
@@ -49,6 +52,17 @@ const LIFT_DEFS = [
     equipmentType: null,
     dayNumber: 1,
     order: 4,
+    isSwapOnly: false,
+  },
+  {
+    slug: "romanian-deadlift",
+    name: "Romanian Deadlift",
+    role: "assistance",
+    bodyRegion: "lower",
+    equipmentType: "barbell",
+    dayNumber: 1,
+    order: 5,
+    isSwapOnly: true,
   },
   {
     slug: "bench-press",
@@ -58,6 +72,7 @@ const LIFT_DEFS = [
     equipmentType: "barbell",
     dayNumber: 2,
     order: 1,
+    isSwapOnly: false,
   },
   {
     slug: "overhead-press",
@@ -67,6 +82,7 @@ const LIFT_DEFS = [
     equipmentType: "barbell",
     dayNumber: 2,
     order: 2,
+    isSwapOnly: false,
   },
   {
     slug: "db-curl",
@@ -76,6 +92,47 @@ const LIFT_DEFS = [
     equipmentType: null,
     dayNumber: 2,
     order: 3,
+    isSwapOnly: false,
+  },
+  {
+    slug: "push-press",
+    name: "Push Press",
+    role: "assistance",
+    bodyRegion: "upper",
+    equipmentType: "barbell",
+    dayNumber: 2,
+    order: 4,
+    isSwapOnly: true,
+  },
+  {
+    slug: "close-grip-bench-press",
+    name: "Close-Grip Bench Press",
+    role: "assistance",
+    bodyRegion: "upper",
+    equipmentType: "barbell",
+    dayNumber: 2,
+    order: 5,
+    isSwapOnly: true,
+  },
+  {
+    slug: "incline-bench-press",
+    name: "Incline Bench Press",
+    role: "assistance",
+    bodyRegion: "upper",
+    equipmentType: "barbell",
+    dayNumber: 2,
+    order: 6,
+    isSwapOnly: true,
+  },
+  {
+    slug: "db-bench-press",
+    name: "Dumbbell Bench Press",
+    role: "assistance",
+    bodyRegion: "upper",
+    equipmentType: "dumbbell",
+    dayNumber: 2,
+    order: 7,
+    isSwapOnly: true,
   },
   {
     slug: "hip-thrust",
@@ -85,6 +142,7 @@ const LIFT_DEFS = [
     equipmentType: "barbell",
     dayNumber: 3,
     order: 1,
+    isSwapOnly: false,
   },
   {
     slug: "single-leg-rdl",
@@ -94,6 +152,7 @@ const LIFT_DEFS = [
     equipmentType: "dumbbell",
     dayNumber: 3,
     order: 2,
+    isSwapOnly: false,
   },
   {
     slug: "single-leg-step-up",
@@ -103,6 +162,7 @@ const LIFT_DEFS = [
     equipmentType: null,
     dayNumber: 3,
     order: 3,
+    isSwapOnly: false,
   },
   {
     slug: "bent-over-row",
@@ -112,6 +172,7 @@ const LIFT_DEFS = [
     equipmentType: "barbell",
     dayNumber: 4,
     order: 1,
+    isSwapOnly: false,
   },
   {
     slug: "lat-pulldown",
@@ -121,6 +182,7 @@ const LIFT_DEFS = [
     equipmentType: "machine",
     dayNumber: 4,
     order: 2,
+    isSwapOnly: false,
   },
   {
     slug: "pull-up",
@@ -130,6 +192,7 @@ const LIFT_DEFS = [
     equipmentType: null,
     dayNumber: 4,
     order: 3,
+    isSwapOnly: false,
   },
   {
     slug: "cable-crunch-day4",
@@ -139,6 +202,7 @@ const LIFT_DEFS = [
     equipmentType: null,
     dayNumber: 4,
     order: 4,
+    isSwapOnly: false,
   },
 ] as const;
 
@@ -168,6 +232,7 @@ export async function seedProgramForUser(userId: string) {
         bodyRegion: l.bodyRegion,
         equipmentType: l.equipmentType,
         orderInDay: l.order,
+        isSwapOnly: l.isSwapOnly,
       }))
     )
     .onConflictDoNothing({ target: [lifts.userId, lifts.slug] });

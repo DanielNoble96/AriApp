@@ -32,10 +32,11 @@ export default async function SessionPage({
         Week {session.weekNumber}, Day {session.dayNumber}
       </h1>
       <p className="mb-6 text-sm font-bold opacity-70">
-        {session.dayName} · {session.status.replace("_", " ")}
+        {session.status.replace("_", " ")}
       </p>
       <SessionClient
         sessionId={session.id}
+        dayNumber={session.dayNumber}
         initialSets={sessionSets}
         initialStatus={session.status}
         initialStartedAt={session.startedAt}

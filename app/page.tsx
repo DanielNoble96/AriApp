@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getActiveCycle, getSessionsForCycle, getAccessoryDaysForCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
 import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
-import { DAY_LABELS, DAY_DISPLAY_ORDER } from "@/lib/constants";
+import { DAY_DISPLAY_ORDER } from "@/lib/constants";
 import { AccessoryDayForm } from "./accessory-day-form";
 import { AccessoryDayRow } from "./accessory-day-row";
 import { Sidebar } from "./sidebar";
@@ -39,7 +39,7 @@ export default async function Home() {
           <Sidebar />
           <h1 className="text-3xl font-bold tracking-tight">Pretty Heavy</h1>
         </div>
-        <Link href="/feed" className={`${PILL_CLASS} bg-brutal-cyan`}>
+        <Link href="/feed" className={`${PILL_CLASS} bg-brutal-yellow`}>
           Feed
         </Link>
       </div>
@@ -90,9 +90,7 @@ export default async function Home() {
                           session.status === "completed" ? "opacity-60" : ""
                         }`}
                       >
-                        <span className="font-bold">
-                          {DAY_LABELS[session.dayNumber] ?? `Day ${session.dayNumber}`}
-                        </span>
+                        <span className="font-bold">{`Day ${session.dayNumber}`}</span>
                         <span className={`${PILL_CLASS} bg-brutal-white text-xs`}>
                           {STATUS_LABEL[session.status]}
                         </span>

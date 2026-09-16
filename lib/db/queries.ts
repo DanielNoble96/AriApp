@@ -13,6 +13,7 @@ export async function getLiftsForUser(userId: string) {
       equipmentType: lifts.equipmentType,
       orderInDay: lifts.orderInDay,
       currentTrainingMax: lifts.currentTrainingMax,
+      isSwapOnly: lifts.isSwapOnly,
       dayNumber: programDays.dayNumber,
       dayName: programDays.name,
     })

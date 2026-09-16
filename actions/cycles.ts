@@ -27,7 +27,10 @@ export async function createCycle(input: CreateCycleInput) {
   const user = await getSessionUser();
   if (!user) throw new Error("Not signed in.");
 
-  const allLifts = await getLiftsForUser(user.id);
+  // Swap-only lifts (see lib/lift-swaps.ts) are shuffle candidates within a
+  // session only -- they never get their own default-generated sets and
+  // never require their own TM/percentage input at cycle setup.
+  const allLifts = (await getLiftsForUser(user.id)).filter((l) => !l.isSwapOnly);
 
   const trackedLifts = allLifts.filter((l) => l.role === "main" || l.role === "assistance");
   const assistanceLifts = allLifts.filter((l) => l.role === "assistance");

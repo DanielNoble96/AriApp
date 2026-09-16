@@ -95,6 +95,10 @@ export const lifts = pgTable(
     equipmentType: equipmentTypeEnum("equipment_type"),
     orderInDay: integer("order_in_day").notNull(),
     currentTrainingMax: numeric("current_training_max", { precision: 6, scale: 2 }),
+    // True for lifts that only exist as shuffle/swap candidates (see
+    // lib/lift-swaps.ts) -- excluded from default per-cycle set generation
+    // and from the cycle-setup TM/percentage form.
+    isSwapOnly: boolean("is_swap_only").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

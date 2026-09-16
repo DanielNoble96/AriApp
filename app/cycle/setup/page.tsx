@@ -20,7 +20,9 @@ export default async function CycleSetupPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
-  const lifts = await getLiftsForUser(user.id);
+  // Swap-only lifts (see lib/lift-swaps.ts) are shuffle candidates within a
+  // session only -- they never need their own TM/percentage entered here.
+  const lifts = (await getLiftsForUser(user.id)).filter((l) => !l.isSwapOnly);
 
   return (
     <main className="mx-auto max-w-md p-4">

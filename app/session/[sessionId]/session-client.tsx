@@ -4,6 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { completeSet, addExtraSet, removeSet } from "@/actions/sets";
 import { resetSession, completeSession, beginSession, pauseSession, resumeSession } from "@/actions/sessions";
+import { swapGroupLift } from "@/actions/lift-swap";
+import { getSwapPool, type SwapSlot } from "@/lib/lift-swaps";
 import { calcPlateBreakdown, calcPlateChange, formatPlateBreakdown } from "@/lib/plates";
 import { InolWidget } from "./inol-widget";
 import {
@@ -100,6 +102,7 @@ function playRestAlert() {
 
 export function SessionClient({
   sessionId,
+  dayNumber,
   initialSets,
   initialStatus,
   initialStartedAt,
@@ -109,6 +112,7 @@ export function SessionClient({
   restTargetWorkSeconds,
 }: {
   sessionId: string;
+  dayNumber: number;
   initialSets: SetRow[];
   initialStatus: "pending" | "in_progress" | "completed";
   initialStartedAt: Date | null;
@@ -130,6 +134,7 @@ export function SessionClient({
   const [completeError, setCompleteError] = useState<string | null>(null);
   const [timerError, setTimerError] = useState<string | null>(null);
   const [addSetError, setAddSetError] = useState<string | null>(null);
+  const [swapError, setSwapError] = useState<string | null>(null);
   const [alertedAnchorMs, setAlertedAnchorMs] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -345,6 +350,26 @@ export function SessionClient({
     });
   }
 
+  function handleSwapLift(slot: SwapSlot, direction: "prev" | "next") {
+    setSwapError(null);
+    startTransition(async () => {
+      let result;
+      try {
+        result = await swapGroupLift(sessionId, slot, direction);
+      } catch (err) {
+        setSwapError(err instanceof Error ? err.message : "Couldn't switch lifts -- try again.");
+        return;
+      }
+      setRows((prev) => {
+        const byId = new Map(result.updatedSets.map((u) => [u.id, u]));
+        return prev.map((r) => {
+          const u = byId.get(r.id);
+          return u ? { ...r, ...u } : r;
+        });
+      });
+    });
+  }
+
   function handleRemoveSet(row: SetRow) {
     if (!row.isExtra && !confirm("Remove this set? This can't be undone.")) {
       return;
@@ -464,6 +489,11 @@ export function SessionClient({
           {addSetError}
         </p>
       )}
+      {swapError && (
+        <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
+          {swapError}
+        </p>
+      )}
 
       {rows.map((row, index) => {
         const groupKey = `${row.liftId}:${row.setType}`;
@@ -478,11 +508,47 @@ export function SessionClient({
         const isLastOfGroup = nextRow == null || `${nextRow.liftId}:${nextRow.setType}` !== groupKey;
         const canAddExtra = isLastOfGroup && (row.setType === "main" || row.setType === "accessory");
 
+        // Warm-Up + Work Sets always share one lift ("main" slot) -- the
+        // arrows live only on the Work Sets header, and swapping there
+        // moves both groups' rows together in one action call.
+        const slot: SwapSlot | null =
+          row.setType === "main" ? "main" : row.setType === "assistance" ? "assistance" : null;
+        const swapPool = slot ? getSwapPool(dayNumber, slot) : [];
+        const slotSetTypes = slot === "main" ? ["warmup", "main"] : ["assistance"];
+        const slotLocked =
+          slot != null &&
+          rows.some((r) => r.liftId === row.liftId && slotSetTypes.includes(r.setType) && r.completedAt != null);
+        const canSwap = slot != null && swapPool.length > 1 && !slotLocked;
+
         return (
           <div key={row.id}>
             {showHeader && (
-              <h2 className={`${PILL_CLASS} mb-2 mt-3 inline-block bg-brutal-white`}>
-                {row.liftName} — {SET_TYPE_LABEL[row.setType]}
+              <h2 className={`${PILL_CLASS} mb-2 mt-3 inline-flex items-center gap-2 bg-brutal-white`}>
+                {canSwap && (
+                  <button
+                    type="button"
+                    aria-label="Previous lift"
+                    disabled={isPending}
+                    onClick={() => handleSwapLift(slot!, "prev")}
+                    className="font-bold opacity-60 hover:opacity-100"
+                  >
+                    ◀
+                  </button>
+                )}
+                <span>
+                  {row.liftName} — {SET_TYPE_LABEL[row.setType]}
+                </span>
+                {canSwap && (
+                  <button
+                    type="button"
+                    aria-label="Next lift"
+                    disabled={isPending}
+                    onClick={() => handleSwapLift(slot!, "next")}
+                    className="font-bold opacity-60 hover:opacity-100"
+                  >
+                    ▶
+                  </button>
+                )}
               </h2>
             )}
             <div
@@ -529,6 +595,11 @@ export function SessionClient({
                         );
                       })()}
                   </>
+                ) : row.targetReps != null ? (
+                  <span className="font-medium opacity-70">
+                    New lift, no history yet — log your own weight × {row.targetReps}
+                    {row.isAmrap ? "+" : ""} reps
+                  </span>
                 ) : (
                   <span className="font-medium opacity-70">
                     Freeform — log your own weight &amp; reps
