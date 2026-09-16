@@ -2,7 +2,7 @@
 
 import { eq, and, inArray, asc } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { sets, sessions, lifts } from "@/lib/db/schema";
+import { sets, sessions, lifts, cycleLiftTms } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { getPriorBestE1rmByLift } from "@/lib/db/social-queries";
 import { getSwapPool, getAdjacentSlug, type SwapSlot } from "@/lib/lift-swaps";
@@ -18,12 +18,14 @@ const SET_TYPES_FOR_SLOT: Record<SwapSlot, ("warmup" | "main" | "assistance")[]>
  * Swaps every set in a session's warm-up+work-set slot ("main") or
  * assistance slot to the next/previous lift in that day's swap pool (see
  * lib/lift-swaps.ts), recomputing each row's targetWeight from the new
- * lift's own lifetime best estimated 1RM (90% of it, matching the "Finding
- * Your Training Max" convention on the About page) -- reps/intensity% stay
- * whatever the week's scheme already prescribed, only the lift and its
- * weight change. Refuses once any set in the slot is already logged, so a
- * swap never silently reattributes a completed set's actual weight/reps to
- * a different lift.
+ * lift's training max: the value entered for it at this cycle's setup if
+ * one exists (cycleLiftTms), else its lifetime best estimated 1RM x 90%
+ * (matching the "Finding Your Training Max" convention on the About page),
+ * else left freeform if neither exists yet. reps/intensity% stay whatever
+ * the week's scheme already prescribed, only the lift and its weight
+ * change. Refuses once any set in the slot is already logged, so a swap
+ * never silently reattributes a completed set's actual weight/reps to a
+ * different lift.
  */
 export async function swapGroupLift(
   sessionId: string,
@@ -63,12 +65,25 @@ export async function swapGroupLift(
     .where(and(eq(lifts.userId, user.id), eq(lifts.slug, nextSlug)));
   if (!nextLift) throw new Error(`Lift "${nextSlug}" isn't set up for this account yet.`);
 
-  // Lifetime best e1RM for the NEW lift -- "reflective of the PRs they've
-  // already put in" for whichever lift is being switched to, not a reused
-  // number from the lift it's replacing.
-  const priorBest = await getPriorBestE1rmByLift(user.id, [nextLift.id], sessionId);
-  const e1rm = priorBest.get(nextLift.id) ?? null;
-  const newTrainingMax = e1rm != null ? e1rm * 0.9 : null;
+  // Prefer the training max the user actually entered for this lift at this
+  // cycle's setup (e.g. swapping Day 3 to Overhead Press or Bent-Over Row --
+  // lifts that already have their own TM for this cycle, just normally used
+  // on a different day). Only fall back to lifetime best e1RM -- "reflective
+  // of the PRs they've already put in" -- for lifts with no TM entered this
+  // cycle (the swap-only candidates like Romanian Deadlift/Push Press).
+  const [cycleTm] = await db
+    .select()
+    .from(cycleLiftTms)
+    .where(and(eq(cycleLiftTms.cycleId, session.cycleId), eq(cycleLiftTms.liftId, nextLift.id)));
+
+  let newTrainingMax: number | null = null;
+  if (cycleTm) {
+    newTrainingMax = Number(cycleTm.startingTm);
+  } else {
+    const priorBest = await getPriorBestE1rmByLift(user.id, [nextLift.id], sessionId);
+    const e1rm = priorBest.get(nextLift.id) ?? null;
+    newTrainingMax = e1rm != null ? e1rm * 0.9 : null;
+  }
   const minWeight = nextLift.equipmentType === "barbell" ? DEFAULT_BAR_WEIGHT : 0;
 
   const updated = [];
