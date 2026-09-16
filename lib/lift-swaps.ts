@@ -24,19 +24,12 @@ export const SWAP_POOLS: Record<number, Record<SwapSlot, string[]>> = {
     ],
   },
   3: {
-    main: ["hip-thrust", "overhead-press", "bench-press", "push-press", "bent-over-row", "lat-pulldown"],
-    assistance: [
-      "single-leg-rdl",
-      "overhead-press",
-      "bench-press",
-      "push-press",
-      "bent-over-row",
-      "lat-pulldown",
-    ],
+    main: ["bent-over-row", "overhead-press", "bench-press", "push-press", "lat-pulldown"],
+    assistance: ["lat-pulldown", "overhead-press", "bench-press", "push-press", "bent-over-row"],
   },
   4: {
-    main: ["bent-over-row", "hip-thrust", "single-leg-rdl", "squat"],
-    assistance: ["lat-pulldown", "hip-thrust", "single-leg-rdl", "squat"],
+    main: ["hip-thrust", "single-leg-rdl", "squat", "deadlift"],
+    assistance: ["single-leg-rdl", "hip-thrust", "squat", "deadlift"],
   },
 };
 
@@ -57,14 +50,21 @@ export const SWAP_ONLY_PARENT_LIFT: Record<string, string> = {
   "db-bench-press": "bench-press",
 };
 
-/** Circular next/prev slug within a pool. Throws if currentSlug isn't in it. */
+/**
+ * Circular next/prev slug within a pool. If currentSlug isn't in the pool
+ * (e.g. a session was generated before SWAP_POOLS changed and its current
+ * lift is no longer listed for that day), falls back to the first pool
+ * entry rather than throwing, so an old default can still be swapped away
+ * from cleanly instead of the arrows erroring out.
+ */
 export function getAdjacentSlug(
   pool: string[],
   currentSlug: string,
   direction: "prev" | "next"
 ): string {
+  if (pool.length === 0) throw new Error("Pool is empty");
   const idx = pool.indexOf(currentSlug);
-  if (idx === -1) throw new Error(`"${currentSlug}" is not in this pool`);
+  if (idx === -1) return pool[0];
   const delta = direction === "next" ? 1 : -1;
   return pool[(idx + delta + pool.length) % pool.length];
 }

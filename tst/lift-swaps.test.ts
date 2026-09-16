@@ -22,8 +22,13 @@ describe("getAdjacentSlug", () => {
     expect(getAdjacentSlug(pool, "a", "prev")).toBe("c");
   });
 
-  it("throws for a slug not present in the pool", () => {
-    expect(() => getAdjacentSlug(pool, "z", "next")).toThrow();
+  it("falls back to the first pool entry when the current slug isn't in the pool", () => {
+    expect(getAdjacentSlug(pool, "z", "next")).toBe("a");
+    expect(getAdjacentSlug(pool, "z", "prev")).toBe("a");
+  });
+
+  it("throws for an empty pool", () => {
+    expect(() => getAdjacentSlug([], "z", "next")).toThrow();
   });
 
   it("returns the same slug both directions for a single-element pool", () => {
@@ -46,8 +51,8 @@ describe("SWAP_POOLS data integrity", () => {
   const currentDefaults: Record<number, { main: string; assistance: string }> = {
     1: { main: "squat", assistance: "deadlift" },
     2: { main: "bench-press", assistance: "overhead-press" },
-    3: { main: "hip-thrust", assistance: "single-leg-rdl" },
-    4: { main: "bent-over-row", assistance: "lat-pulldown" },
+    3: { main: "bent-over-row", assistance: "lat-pulldown" },
+    4: { main: "hip-thrust", assistance: "single-leg-rdl" },
   };
 
   for (const day of [1, 2, 3, 4]) {
