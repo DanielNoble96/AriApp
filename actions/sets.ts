@@ -106,12 +106,21 @@ export async function removeSet(setId: string) {
   if (!user) throw new Error("Not signed in.");
 
   const [owned] = await db
-    .select({ userId: sessions.userId, sessionId: sets.sessionId, orderIndex: sets.orderIndex })
+    .select({
+      userId: sessions.userId,
+      sessionId: sets.sessionId,
+      orderIndex: sets.orderIndex,
+      setType: sets.setType,
+    })
     .from(sets)
     .innerJoin(sessions, eq(sets.sessionId, sessions.id))
     .where(eq(sets.id, setId));
   if (!owned) throw new Error("Set not found");
   if (owned.userId !== user.id) throw new Error("Forbidden");
+  // Warm-up sets are a fixed, prescribed group (there's no "+ Add" for them
+  // either) -- removing one would silently drop a lifter below a safe
+  // warm-up and there's no way to get it back.
+  if (owned.setType === "warmup") throw new Error("Warm-up sets can't be removed.");
 
   await db.delete(sets).where(eq(sets.id, setId));
 

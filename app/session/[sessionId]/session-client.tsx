@@ -650,15 +650,17 @@ export function SessionClient({
                   <span className="opacity-70">Edit</span>
                 </button>
               )}
-              <button
-                type="button"
-                aria-label="Remove set"
-                disabled={isPending}
-                onClick={() => handleRemoveSet(row)}
-                className="shrink-0 text-lg font-bold leading-none opacity-50 hover:opacity-100"
-              >
-                ×
-              </button>
+              {row.setType !== "warmup" && (
+                <button
+                  type="button"
+                  aria-label="Remove set"
+                  disabled={isPending}
+                  onClick={() => handleRemoveSet(row)}
+                  className="shrink-0 text-lg font-bold leading-none opacity-50 hover:opacity-100"
+                >
+                  ×
+                </button>
+              )}
             </div>
             {errorId === row.id && (
               <p className="mt-1 text-xs font-bold text-red-600">Enter a valid rep count.</p>

@@ -21,7 +21,8 @@ const SET_TYPES_FOR_SLOT: Record<SwapSlot, ("warmup" | "main" | "assistance")[]>
  * lift's training max: the value entered for it at this cycle's setup if
  * one exists (cycleLiftTms), else its lifetime best estimated 1RM x 90%
  * (matching the "Finding Your Training Max" convention on the About page),
- * else left freeform if neither exists yet. reps/intensity% stay whatever
+ * else, for a barbell lift, the empty bar weight as a starting baseline
+ * (dumbbell/machine lifts have no such floor and stay freeform). reps/intensity% stay whatever
  * the week's scheme already prescribed, only the lift and its weight
  * change. Refuses once any set in the slot is already logged, so a swap
  * never silently reattributes a completed set's actual weight/reps to a
@@ -91,7 +92,13 @@ export async function swapGroupLift(
     const targetWeight =
       newTrainingMax != null && row.intensityPercentage != null
         ? calcTargetWeight(newTrainingMax, Number(row.intensityPercentage), ROUND_INCREMENT, minWeight)
-        : null;
+        : // No training max data at all yet -- for a barbell lift there's
+          // still a sensible floor (you can't load less than an empty bar),
+          // so suggest that instead of leaving it fully blank. Dumbbell/
+          // machine lifts have no such floor, so those stay freeform.
+          minWeight > 0
+          ? minWeight
+          : null;
     const [saved] = await db
       .update(sets)
       .set({ liftId: nextLift.id, targetWeight: targetWeight != null ? String(targetWeight) : null })
