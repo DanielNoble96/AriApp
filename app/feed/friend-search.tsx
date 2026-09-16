@@ -128,9 +128,11 @@ export function FriendSearch({ pendingRequests }: { pendingRequests: PendingRequ
                   Add Friend
                 </button>
               )}
-              {r.status === "pending-sent" && <span className={`${PILL_CLASS} text-xs`}>Requested</span>}
+              {r.status === "pending-sent" && (
+                <span className={`${PILL_CLASS} bg-brutal-white text-xs`}>Requested</span>
+              )}
               {r.status === "pending-received" && (
-                <span className={`${PILL_CLASS} text-xs`}>Check Requests ↑</span>
+                <span className={`${PILL_CLASS} bg-brutal-white text-xs`}>Check Requests ↑</span>
               )}
               {r.status === "friends" && (
                 <span className={`${PILL_CLASS} bg-brutal-green text-xs`}>Friends</span>

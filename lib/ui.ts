@@ -32,8 +32,13 @@ export const SUCCESS_BUTTON_CLASS =
 export const PINK_BUTTON_CLASS =
   `${BORDER_CLASS} ${SHADOW_CLASS} rounded-lg bg-brutal-pink font-bold text-brutal-black transition-transform active:translate-x-[3px] active:translate-y-[3px] active:shadow-none disabled:opacity-50`;
 
+// No background baked in -- Tailwind's generated CSS order (not the order
+// classes appear in a className string) decides which bg-* utility wins
+// when two are both present, so a baked-in default here would sometimes
+// beat a caller's override unpredictably. Callers always supply their own
+// bg-brutal-* class.
 export const PILL_CLASS =
-  `${BORDER_CLASS} inline-flex items-center justify-center whitespace-nowrap rounded-full bg-brutal-white px-3 py-1 text-sm font-bold text-brutal-black`;
+  `${BORDER_CLASS} inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-1 text-sm font-bold text-brutal-black`;
 
 /** Rotating background colors for day/section cards. */
 export const CANDY_BG_CLASSES = [

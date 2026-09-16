@@ -13,7 +13,7 @@ export default function LoginPage() {
       </div>
       <p className="text-center text-sm font-medium">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className={`${PILL_CLASS} inline-block`}>
+        <Link href="/signup" className={`${PILL_CLASS} inline-block bg-brutal-white`}>
           Sign up
         </Link>
       </p>
