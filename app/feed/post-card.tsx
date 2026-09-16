@@ -138,7 +138,6 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
             <input
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               disabled={isPending}
               onChange={handlePhotoChange}
