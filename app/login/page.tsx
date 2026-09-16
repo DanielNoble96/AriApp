@@ -17,6 +17,11 @@ export default function LoginPage() {
           Sign up
         </Link>
       </p>
+      <p className="text-center text-xs font-medium opacity-60">
+        <Link href="/about" className="underline">
+          About this app
+        </Link>
+      </p>
     </main>
   );
 }

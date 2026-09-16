@@ -116,6 +116,12 @@ export default async function Home() {
           </div>
         </>
       )}
+
+      <p className="text-center text-xs font-medium opacity-60">
+        <Link href="/about" className="underline">
+          About this app
+        </Link>
+      </p>
     </main>
   );
 }
