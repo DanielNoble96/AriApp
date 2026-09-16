@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { sets, sessions, lifts, cycleLiftTms } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { getPriorBestE1rmByLift } from "@/lib/db/social-queries";
-import { getSwapPool, getAdjacentSlug, type SwapSlot } from "@/lib/lift-swaps";
+import { getSwapPool, getAdjacentSlug, SWAP_ONLY_PARENT_LIFT, type SwapSlot } from "@/lib/lift-swaps";
 import { calcTargetWeight } from "@/lib/weight-calc";
 import { ROUND_INCREMENT, DEFAULT_BAR_WEIGHT } from "@/lib/constants";
 
@@ -19,10 +19,12 @@ const SET_TYPES_FOR_SLOT: Record<SwapSlot, ("warmup" | "main" | "assistance")[]>
  * assistance slot to the next/previous lift in that day's swap pool (see
  * lib/lift-swaps.ts), recomputing each row's targetWeight from the new
  * lift's training max: the value entered for it at this cycle's setup if
- * one exists (cycleLiftTms), else its lifetime best estimated 1RM x 90%
- * (matching the "Finding Your Training Max" convention on the About page),
- * else, for a barbell lift, the empty bar weight as a starting baseline
- * (dumbbell/machine lifts have no such floor and stay freeform). reps/intensity% stay whatever
+ * one exists (cycleLiftTms), else its "parent" tracked lift's TM for
+ * swap-only variations (see SWAP_ONLY_PARENT_LIFT), else its lifetime best
+ * estimated 1RM x 90% (matching the "Finding Your Training Max" convention
+ * on the About page), else, for a barbell lift, the empty bar weight as a
+ * starting baseline (dumbbell/machine lifts have no such floor and stay
+ * freeform). reps/intensity% stay whatever
  * the week's scheme already prescribed, only the lift and its weight
  * change. Refuses once any set in the slot is already logged, so a swap
  * never silently reattributes a completed set's actual weight/reps to a
@@ -69,18 +71,35 @@ export async function swapGroupLift(
   // Prefer the training max the user actually entered for this lift at this
   // cycle's setup (e.g. swapping Day 3 to Overhead Press or Bent-Over Row --
   // lifts that already have their own TM for this cycle, just normally used
-  // on a different day). Only fall back to lifetime best e1RM -- "reflective
-  // of the PRs they've already put in" -- for lifts with no TM entered this
-  // cycle (the swap-only candidates like Romanian Deadlift/Push Press).
-  const [cycleTm] = await db
-    .select()
-    .from(cycleLiftTms)
-    .where(and(eq(cycleLiftTms.cycleId, session.cycleId), eq(cycleLiftTms.liftId, nextLift.id)));
+  // on a different day). Next, for a swap-only lift that's just a variation
+  // on one of the 8 tracked lifts (Romanian Deadlift -> Deadlift, the bench
+  // variants -> Bench Press), reuse that parent lift's TM for this cycle.
+  // Only fall back to lifetime best e1RM -- "reflective of the PRs they've
+  // already put in" -- for lifts with neither.
+  async function tmForLift(liftId: string): Promise<number | null> {
+    const [row] = await db
+      .select()
+      .from(cycleLiftTms)
+      .where(and(eq(cycleLiftTms.cycleId, session.cycleId), eq(cycleLiftTms.liftId, liftId)));
+    return row ? Number(row.startingTm) : null;
+  }
 
-  let newTrainingMax: number | null = null;
-  if (cycleTm) {
-    newTrainingMax = Number(cycleTm.startingTm);
-  } else {
+  let newTrainingMax = await tmForLift(nextLift.id);
+
+  if (newTrainingMax == null) {
+    const parentSlug = SWAP_ONLY_PARENT_LIFT[nextLift.slug];
+    if (parentSlug) {
+      const [parentLift] = await db
+        .select()
+        .from(lifts)
+        .where(and(eq(lifts.userId, user.id), eq(lifts.slug, parentSlug)));
+      if (parentLift) {
+        newTrainingMax = await tmForLift(parentLift.id);
+      }
+    }
+  }
+
+  if (newTrainingMax == null) {
     const priorBest = await getPriorBestE1rmByLift(user.id, [nextLift.id], sessionId);
     const e1rm = priorBest.get(nextLift.id) ?? null;
     newTrainingMax = e1rm != null ? e1rm * 0.9 : null;

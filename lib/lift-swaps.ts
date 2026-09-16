@@ -44,6 +44,19 @@ export function getSwapPool(dayNumber: number, slot: SwapSlot): string[] {
   return SWAP_POOLS[dayNumber]?.[slot] ?? [];
 }
 
+/**
+ * Swap-only lifts that are just a variation on one of the 8 tracked
+ * main/assistance lifts -- these reuse that lift's training max for the
+ * current cycle instead of requiring their own history before they show a
+ * real suggested weight.
+ */
+export const SWAP_ONLY_PARENT_LIFT: Record<string, string> = {
+  "romanian-deadlift": "deadlift",
+  "close-grip-bench-press": "bench-press",
+  "incline-bench-press": "bench-press",
+  "db-bench-press": "bench-press",
+};
+
 /** Circular next/prev slug within a pool. Throws if currentSlug isn't in it. */
 export function getAdjacentSlug(
   pool: string[],

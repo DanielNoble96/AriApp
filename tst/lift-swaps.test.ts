@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { SWAP_POOLS, getSwapPool, getAdjacentSlug } from "../lib/lift-swaps";
+import { SWAP_POOLS, getSwapPool, getAdjacentSlug, SWAP_ONLY_PARENT_LIFT } from "../lib/lift-swaps";
 
 describe("getAdjacentSlug", () => {
   const pool = ["a", "b", "c"];
@@ -63,4 +63,31 @@ describe("SWAP_POOLS data integrity", () => {
       }
     });
   }
+});
+
+describe("SWAP_ONLY_PARENT_LIFT", () => {
+  const trackedDefaults = new Set([
+    "squat",
+    "deadlift",
+    "bench-press",
+    "overhead-press",
+    "hip-thrust",
+    "single-leg-rdl",
+    "bent-over-row",
+    "lat-pulldown",
+  ]);
+
+  it("maps every swap-only variation to a real tracked (non-swap-only) parent lift", () => {
+    for (const [variant, parent] of Object.entries(SWAP_ONLY_PARENT_LIFT)) {
+      expect(trackedDefaults.has(parent)).toBe(true);
+      expect(variant).not.toBe(parent);
+    }
+  });
+
+  it("maps deadlift variations and bench variations as requested", () => {
+    expect(SWAP_ONLY_PARENT_LIFT["romanian-deadlift"]).toBe("deadlift");
+    expect(SWAP_ONLY_PARENT_LIFT["close-grip-bench-press"]).toBe("bench-press");
+    expect(SWAP_ONLY_PARENT_LIFT["incline-bench-press"]).toBe("bench-press");
+    expect(SWAP_ONLY_PARENT_LIFT["db-bench-press"]).toBe("bench-press");
+  });
 });
