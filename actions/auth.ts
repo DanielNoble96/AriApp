@@ -9,20 +9,12 @@ import { seedProgramForUser } from "@/lib/db/seed-user";
 
 type AuthResult = { success: true } | { success: false; error: string };
 
-function isAllowedEmail(email: string): boolean {
-  const allowlist = (process.env.ALLOWED_SIGNUP_EMAILS ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  return allowlist.includes(email.toLowerCase());
-}
-
 const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
 // TODO: no email verification -- signup trusts whatever email is typed in,
-// with no confirmation link sent. Security currently relies entirely on the
-// allowlist + password. Fine for a small group of trusted people; revisit
-// (needs an email-sending service like Resend) if that stops being true.
+// with no confirmation link sent. Open to anyone (no allowlist) as of the
+// social feed feature -- security relies entirely on the password plus
+// username uniqueness now, so revisit if spam/abuse becomes a problem.
 export async function signup(
   email: string,
   password: string,
@@ -34,9 +26,6 @@ export async function signup(
   }
   if (password.length < 8) {
     return { success: false, error: "Password must be at least 8 characters." };
-  }
-  if (!isAllowedEmail(email)) {
-    return { success: false, error: "This email isn't approved for signup." };
   }
 
   const [existing] = await db.select().from(users).where(eq(users.email, email));
