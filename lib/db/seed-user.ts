@@ -9,9 +9,9 @@ const DAY_DEFS = [
   { dayNumber: 4, name: "Day 4" },
 ] as const;
 
-// Cable Crunches appears on both Day 1 and Day 4 in the program, but a lift
+// Cable Crunches appears on both Day 1 and Day 3 in the program, but a lift
 // belongs to exactly one program_day in this schema, so it's seeded as two
-// independent rows (cable-crunch-day1 / cable-crunch-day4). Accessories have
+// independent rows (cable-crunch-day1 / cable-crunch-day3). Accessories have
 // no shared training max or history, so this costs nothing functionally.
 const LIFT_DEFS = [
   {
@@ -160,7 +160,7 @@ const LIFT_DEFS = [
     role: "accessory",
     bodyRegion: null,
     equipmentType: null,
-    dayNumber: 3,
+    dayNumber: 4,
     order: 3,
     isSwapOnly: false,
   },
@@ -190,17 +190,17 @@ const LIFT_DEFS = [
     role: "accessory",
     bodyRegion: null,
     equipmentType: null,
-    dayNumber: 4,
+    dayNumber: 3,
     order: 3,
     isSwapOnly: false,
   },
   {
-    slug: "cable-crunch-day4",
+    slug: "cable-crunch-day3",
     name: "Cable Crunches",
     role: "accessory",
     bodyRegion: null,
     equipmentType: null,
-    dayNumber: 4,
+    dayNumber: 3,
     order: 4,
     isSwapOnly: false,
   },
