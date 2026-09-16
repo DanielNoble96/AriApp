@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES } from "@/lib/ui";
 
+const PROGRAM_FEATURE = {
+  title: "5/3/1 Program",
+  body: "A 4-day, 3-week training cycle with automatic weight calculations from your training maxes. Warm-ups, work sets, and assistance work are all worked out for you.",
+};
+
 const FEATURES = [
-  {
-    title: "5/3/1 Program",
-    body: "A 4-day, 3-week training cycle with automatic weight calculations from your training maxes. Warm-ups, work sets, and assistance work are all worked out for you.",
-  },
   {
     title: "Live Workout Tracking",
     body: "Check off sets as you go, with elapsed and rest timers, plate-loading math for barbell lifts, and an easy way to add or edit extra sets mid-session.",
@@ -46,6 +47,11 @@ export default function AboutPage() {
         </p>
       </div>
 
+      <div className={`${CARD_CLASS} ${CANDY_BG_CLASSES[0]} p-4`}>
+        <h3 className="text-lg font-bold">{PROGRAM_FEATURE.title}</h3>
+        <p className="mt-1 text-sm font-medium">{PROGRAM_FEATURE.body}</p>
+      </div>
+
       <div className={`${CARD_CLASS} bg-brutal-white p-6`}>
         <h2 className="text-xl font-bold">Finding Your Training Max</h2>
         <div className="mt-2 flex flex-col gap-2 text-sm font-medium">
@@ -73,7 +79,7 @@ export default function AboutPage() {
         {FEATURES.map((feature, i) => (
           <div
             key={feature.title}
-            className={`${CARD_CLASS} ${CANDY_BG_CLASSES[i % CANDY_BG_CLASSES.length]} p-4`}
+            className={`${CARD_CLASS} ${CANDY_BG_CLASSES[(i + 1) % CANDY_BG_CLASSES.length]} p-4`}
           >
             <h3 className="text-lg font-bold">{feature.title}</h3>
             <p className="mt-1 text-sm font-medium">{feature.body}</p>
