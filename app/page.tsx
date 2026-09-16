@@ -40,11 +40,11 @@ export default async function Home() {
           <Link href="/cycle/setup" className={`${PILL_CLASS} bg-brutal-yellow`}>
             New Cycle
           </Link>
-          <Link href="/feed" className={`${PILL_CLASS} bg-brutal-white`}>
+          <Link href="/feed" className={`${PILL_CLASS} bg-brutal-cyan`}>
             Feed
           </Link>
           <form action={logout}>
-            <button type="submit" className={`${PILL_CLASS} bg-brutal-white`}>
+            <button type="submit" className={`${PILL_CLASS} bg-brutal-cyan`}>
               Log Out
             </button>
           </form>

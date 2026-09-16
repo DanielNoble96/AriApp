@@ -25,7 +25,7 @@ export default async function SessionPage({
 
   return (
     <main className="mx-auto max-w-md p-4 pb-28">
-      <Link href="/" className={`${PILL_CLASS} mb-4 inline-block bg-brutal-white`}>
+      <Link href="/" className={`${PILL_CLASS} mb-4 inline-block bg-brutal-cyan`}>
         ← Home
       </Link>
       <h1 className="mb-1 text-3xl font-bold tracking-tight">
