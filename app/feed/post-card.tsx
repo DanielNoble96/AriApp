@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { updatePostCaption } from "@/actions/posts";
+import { updatePostCaption, uploadPostPhoto } from "@/actions/posts";
 import { addComment } from "@/actions/comments";
 import { getInolTier, INOL_TIER_LABEL, type InolTier } from "@/lib/inol";
-import { CARD_CLASS, INPUT_CLASS, BUTTON_CLASS, PILL_CLASS } from "@/lib/ui";
+import { CARD_CLASS, INPUT_CLASS, BUTTON_CLASS, PILL_CLASS, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
 import { ACCESSORY_ACTIVITY_LABELS } from "@/lib/constants";
 import type { FeedPost } from "@/lib/db/social-queries";
 
@@ -59,6 +59,23 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
     });
   }
 
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    const formData = new FormData();
+    formData.set("photo", file);
+    startTransition(async () => {
+      try {
+        await uploadPostPhoto(post.id, formData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Couldn't upload photo.");
+        return;
+      }
+      router.refresh();
+    });
+  }
+
   function handleAddComment(e: React.FormEvent) {
     e.preventDefault();
     if (!commentDraft.trim()) return;
@@ -103,13 +120,31 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
         </p>
       )}
 
-      {post.photoUrl && (
+      {post.photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- external Blob URL, no next/image config in this app
         <img
           src={post.photoUrl}
           alt=""
           className="mt-3 w-full rounded-lg border-[3px] border-brutal-black"
         />
+      ) : (
+        isOwner && (
+          <label
+            className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-brutal-white p-3 text-sm font-bold ${
+              isPending ? "opacity-50" : ""
+            }`}
+          >
+            📷 Add a photo
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              disabled={isPending}
+              onChange={handlePhotoChange}
+            />
+          </label>
+        )
       )}
 
       {!isAccessoryDay && inol != null && tier != null && (
