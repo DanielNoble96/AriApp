@@ -137,7 +137,7 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
       )}
 
       {post.photos.length > 0 && (
-        <div className="relative mt-3 h-80 snap-y snap-mandatory overflow-y-auto rounded-lg border-[3px] border-brutal-black">
+        <div className="relative mt-3 flex h-80 snap-x snap-mandatory overflow-x-auto rounded-lg border-[3px] border-brutal-black">
           {post.photos.map((photo, i) => (
             <div key={photo.id} className="relative h-80 w-full shrink-0 snap-start">
               {/* eslint-disable-next-line @next/next/no-img-element -- served via app/api/photos, no next/image config in this app */}
