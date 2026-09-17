@@ -488,18 +488,14 @@ export function SessionClient({
 
       {(hasProgress || status !== "pending") && (
         <div className="flex items-center justify-between gap-3">
-          {hasProgress ? (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleReset}
-              className={`px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
-            >
-              Reset Session
-            </button>
-          ) : (
-            <span />
-          )}
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleReset}
+            className={`px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
+          >
+            Reset Session
+          </button>
           {status !== "pending" && (
             <button
               type="button"
