@@ -33,9 +33,7 @@ export default async function SessionResultsPage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-6 p-6 text-center">
-      <p className="text-sm font-bold opacity-70">
-        Week {session.weekNumber}, Day {session.dayNumber} -- {session.dayName}
-      </p>
+      <p className="text-2xl font-bold">Congrats on completing your workout!</p>
       <div className={`${CARD_CLASS} ${TIER_BG[tier]} flex w-full flex-col gap-2 p-8`}>
         <p className="text-xs font-bold uppercase tracking-wide opacity-70">Your INOL Score</p>
         <p className="text-6xl font-bold">{inol.toFixed(2)}</p>
