@@ -612,7 +612,7 @@ export function SessionClient({
                           <div className="text-xs font-medium opacity-70">
                             {breakdown.belowBarWeight
                               ? "Below an empty bar (45 lb) -- use just the bar"
-                              : `${formatPlateBreakdown(breakdown.perSide)} / side`}
+                              : formatPlateBreakdown(breakdown.perSide)}
                           </div>
                         );
                       })()}
