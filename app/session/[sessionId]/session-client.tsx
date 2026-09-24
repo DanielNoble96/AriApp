@@ -237,6 +237,18 @@ export function SessionClient({
     });
   }
 
+  // Starts the timer automatically the moment this session's page loads,
+  // rather than requiring an explicit "Begin Workout" tap first -- opening
+  // a day from the home page is the start of the workout. beginSession
+  // itself no-ops if the session isn't still "pending" (e.g. a reload of
+  // an already-started session), so this is safe to fire unconditionally.
+  useEffect(() => {
+    if (initialStatus === "pending") {
+      handleBegin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function handlePauseToggle() {
     setTimerError(null);
     const wasPaused = isPaused;
@@ -453,36 +465,26 @@ export function SessionClient({
         </div>
       </div>
 
-      {status === "pending" && (
-        <div className="flex gap-3">
+      <div className="flex gap-3">
+        {status === "in_progress" && (
           <button
             type="button"
             disabled={isPending}
-            onClick={handleBegin}
-            className={`flex-1 py-3 text-base ${SUCCESS_BUTTON_CLASS}`}
+            onClick={handlePauseToggle}
+            className={`flex-1 py-3 text-base ${isPaused ? SUCCESS_BUTTON_CLASS : BUTTON_CLASS}`}
           >
-            Begin Workout
+            {isPaused ? "Resume Workout" : "Pause Workout"}
           </button>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleComplete}
-            className={`flex-1 py-3 text-base ${PINK_BUTTON_CLASS}`}
-          >
-            Complete Session
-          </button>
-        </div>
-      )}
-      {status === "in_progress" && (
+        )}
         <button
           type="button"
           disabled={isPending}
-          onClick={handlePauseToggle}
-          className={`w-full py-3 text-base ${isPaused ? SUCCESS_BUTTON_CLASS : BUTTON_CLASS}`}
+          onClick={handleComplete}
+          className={`flex-1 py-3 text-base ${PINK_BUTTON_CLASS}`}
         >
-          {isPaused ? "Resume Workout" : "Pause Workout"}
+          Complete Session
         </button>
-      )}
+      </div>
       {timerError && (
         <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
           {timerError}
@@ -490,26 +492,14 @@ export function SessionClient({
       )}
 
       {(hasProgress || status !== "pending") && (
-        <div className="flex items-center justify-between gap-3">
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleReset}
-            className={`px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
-          >
-            Reset Session
-          </button>
-          {status !== "pending" && (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={handleComplete}
-              className={`px-4 py-2 text-sm ${PINK_BUTTON_CLASS}`}
-            >
-              Complete Session
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={handleReset}
+          className={`self-start px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
+        >
+          Reset Session
+        </button>
       )}
       {resetError && (
         <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
