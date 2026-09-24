@@ -8,6 +8,19 @@ export function calcEstimated1Rm(weight: number, reps: number): number {
   return weight * (1 + reps / 30);
 }
 
+/**
+ * Minimum whole rep count at `weight` whose estimated 1RM would strictly
+ * beat `priorBestE1rm` -- what an AMRAP set's live "PR:" hint shows, so a
+ * lifter knows how many reps they need before racking the bar. Always at
+ * least 1 (even a weight already above the prior best still needs a rep
+ * logged to count).
+ */
+export function calcRepsNeededForPr(weight: number, priorBestE1rm: number): number {
+  if (weight <= 0) return 1;
+  const needed = Math.floor(30 * (priorBestE1rm / weight - 1)) + 1;
+  return Math.max(1, needed);
+}
+
 export interface CurrentSetForPr {
   liftId: string;
   liftName: string;

@@ -8,6 +8,7 @@ import { swapGroupLift } from "@/actions/lift-swap";
 import { addCustomAccessory } from "@/actions/custom-accessories";
 import { getSwapPool, type SwapSlot } from "@/lib/lift-swaps";
 import { calcPlateBreakdown, calcPlateChange, formatPlateBreakdown } from "@/lib/plates";
+import { calcRepsNeededForPr } from "@/lib/prs";
 import { InolWidget } from "./inol-widget";
 import {
   BUTTON_CLASS,
@@ -114,6 +115,7 @@ export function SessionClient({
   sessionId,
   dayNumber,
   initialSets,
+  priorBestE1rmByLiftId,
   initialStatus,
   initialStartedAt,
   initialPausedAt,
@@ -124,6 +126,7 @@ export function SessionClient({
   sessionId: string;
   dayNumber: number;
   initialSets: SetRow[];
+  priorBestE1rmByLiftId: Record<string, number>;
   initialStatus: "pending" | "in_progress" | "completed";
   initialStartedAt: Date | null;
   initialPausedAt: Date | null;
@@ -538,6 +541,15 @@ export function SessionClient({
         const isEditing = editingId === row.id || !isDone;
         const draft = draftFor(row);
 
+        // Live "reps needed for a PR" hint on an AMRAP set's dedicated
+        // reps panel, based on the weight currently entered.
+        const priorBest = priorBestE1rmByLiftId[row.liftId];
+        const draftWeightNum = Number(draft.weight);
+        const amrapNeededReps =
+          row.isAmrap && isEditing && priorBest != null && draft.weight !== "" && !Number.isNaN(draftWeightNum) && draftWeightNum > 0
+            ? calcRepsNeededForPr(draftWeightNum, priorBest)
+            : null;
+
         const nextRow = rows[index + 1];
         const isLastOfGroup = nextRow == null || `${nextRow.liftId}:${nextRow.setType}` !== groupKey;
         const canAddExtra = isLastOfGroup && (row.setType === "main" || row.setType === "accessory");
@@ -643,9 +655,6 @@ export function SessionClient({
 
               {isEditing ? (
                 <div className="flex items-center gap-1">
-                  {row.isAmrap && (
-                    <span className="text-xs font-bold text-brutal-pink">AMRAP</span>
-                  )}
                   <input
                     type="number"
                     inputMode="decimal"
@@ -654,14 +663,16 @@ export function SessionClient({
                     value={draft.weight}
                     onChange={(e) => updateDraft(row, "weight", e.target.value)}
                   />
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    placeholder="reps"
-                    className={`${COMPACT_INPUT_CLASS} text-sm ${row.isAmrap ? "w-16" : "w-14"}`}
-                    value={draft.reps}
-                    onChange={(e) => updateDraft(row, "reps", e.target.value)}
-                  />
+                  {!row.isAmrap && (
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="reps"
+                      className={`${COMPACT_INPUT_CLASS} w-14 text-sm`}
+                      value={draft.reps}
+                      onChange={(e) => updateDraft(row, "reps", e.target.value)}
+                    />
+                  )}
                   <button
                     type="button"
                     disabled={isPending}
@@ -696,6 +707,27 @@ export function SessionClient({
                 </button>
               )}
             </div>
+            {row.isAmrap && isEditing && (
+              <div
+                className={`${CARD_CLASS} mt-2 flex items-center justify-between gap-3 bg-brutal-pink p-3`}
+              >
+                <span className="text-sm font-bold uppercase tracking-wide">AMRAP</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="reps"
+                    className={`${COMPACT_INPUT_CLASS} w-16 text-center text-lg font-bold`}
+                    value={draft.reps}
+                    onChange={(e) => updateDraft(row, "reps", e.target.value)}
+                  />
+                  <span className="text-sm font-bold">reps</span>
+                </div>
+                <span className="text-sm font-bold">
+                  PR: {amrapNeededReps ?? "—"}
+                </span>
+              </div>
+            )}
             {errorId === row.id && (
               <p className="mt-1 text-xs font-bold text-red-600">Enter a valid rep count.</p>
             )}

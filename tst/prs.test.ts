@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcEstimated1Rm, findPrs, type CurrentSetForPr } from "../lib/prs";
+import { calcEstimated1Rm, calcRepsNeededForPr, findPrs, type CurrentSetForPr } from "../lib/prs";
 
 describe("calcEstimated1Rm", () => {
   it("applies the Epley formula", () => {
@@ -9,6 +9,23 @@ describe("calcEstimated1Rm", () => {
 
   it("returns the weight itself for a 1-rep set", () => {
     expect(calcEstimated1Rm(315, 1)).toBeCloseTo(315 * (1 + 1 / 30), 5);
+  });
+});
+
+describe("calcRepsNeededForPr", () => {
+  it("returns the smallest rep count whose e1RM beats the prior best", () => {
+    const priorBest = calcEstimated1Rm(200, 5); // 233.33
+    const needed = calcRepsNeededForPr(200, priorBest);
+    expect(calcEstimated1Rm(200, needed)).toBeGreaterThan(priorBest);
+    expect(calcEstimated1Rm(200, needed - 1)).toBeLessThanOrEqual(priorBest);
+  });
+
+  it("still returns at least 1 when the weight alone already beats the prior best", () => {
+    expect(calcRepsNeededForPr(300, 100)).toBe(1);
+  });
+
+  it("returns 1 for a non-positive weight rather than dividing by zero", () => {
+    expect(calcRepsNeededForPr(0, 100)).toBe(1);
   });
 });
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSessionById, getSetsForSession } from "@/lib/db/queries";
+import { getPriorBestE1rmByLift } from "@/lib/db/social-queries";
 import { getSessionUser } from "@/lib/auth";
 import { SessionClient } from "./session-client";
 import { PILL_CLASS } from "@/lib/ui";
@@ -23,6 +24,12 @@ export default async function SessionPage({
 
   const sessionSets = await getSetsForSession(sessionId);
 
+  // Powers the live "PR:" hint on AMRAP sets -- how many reps at the
+  // current weight would beat this lift's best prior estimated 1RM.
+  const mainLiftIds = [...new Set(sessionSets.filter((s) => s.setType === "main").map((s) => s.liftId))];
+  const priorBestE1rmMap = await getPriorBestE1rmByLift(user.id, mainLiftIds, sessionId);
+  const priorBestE1rmByLiftId = Object.fromEntries(priorBestE1rmMap);
+
   return (
     <main className="mx-auto max-w-md p-4 pb-28">
       <Link href="/" className={`${PILL_CLASS} mb-4 inline-block bg-brutal-cyan`}>
@@ -38,6 +45,7 @@ export default async function SessionPage({
         sessionId={session.id}
         dayNumber={session.dayNumber}
         initialSets={sessionSets}
+        priorBestE1rmByLiftId={priorBestE1rmByLiftId}
         initialStatus={session.status}
         initialStartedAt={session.startedAt}
         initialPausedAt={session.pausedAt}
