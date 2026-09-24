@@ -443,6 +443,9 @@ export function SessionClient({
 
   return (
     <div className="flex flex-col gap-3">
+      <p className="-mt-3 text-sm font-bold opacity-70">
+        {isPaused ? "paused" : status.replace("_", " ")}
+      </p>
       <InolWidget sets={rows} />
       <div
         className={`${CARD_CLASS} flex flex-col gap-2 p-4 transition-colors ${

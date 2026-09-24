@@ -35,12 +35,9 @@ export default async function SessionPage({
       <Link href="/" className={`${PILL_CLASS} mb-4 inline-block bg-brutal-cyan`}>
         ← Home
       </Link>
-      <h1 className="mb-1 text-3xl font-bold tracking-tight">
+      <h1 className="mb-6 text-3xl font-bold tracking-tight">
         Week {session.weekNumber}, Day {session.dayNumber}
       </h1>
-      <p className="mb-6 text-sm font-bold opacity-70">
-        {session.status.replace("_", " ")}
-      </p>
       <SessionClient
         sessionId={session.id}
         dayNumber={session.dayNumber}
