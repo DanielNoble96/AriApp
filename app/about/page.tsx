@@ -3,7 +3,7 @@ import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES } from "@/lib/ui";
 
 const PROGRAM_FEATURE = {
   title: "5/3/1 Program",
-  body: "A 4-day, 3-week training cycle with automatic weight calculations from your training maxes. Warm-ups, work sets, and assistance work are all worked out for you.",
+  body: "A 4-day, 3-week training cycle (Squat, Bench Press, Overhead Press, Deadlift) with automatic weight calculations from your training maxes. Warm-ups and work sets are all worked out for you -- add your own accessory work on top, freeform.",
 };
 
 const FEATURES = [
@@ -56,7 +56,7 @@ export default function AboutPage() {
         <h2 className="text-xl font-bold">Finding Your Training Max</h2>
         <div className="mt-2 flex flex-col gap-2 text-sm font-medium">
           <p>
-            Every cycle starts with a training max for each main and assistance lift. That number
+            Every cycle starts with a training max for each of the 4 main lifts. That number
             drives all the weight math, so it&apos;s worth getting right.
           </p>
           <p>

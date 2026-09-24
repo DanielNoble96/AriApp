@@ -225,25 +225,27 @@ export function SetupForm({
         </div>
       </section>
 
-      <section className={`${CARD_CLASS} ${CANDY_BG_CLASSES[3]} p-4`}>
-        <h2 className="mb-3 text-xl font-bold">Assistance % of TM</h2>
-        <div className="flex flex-col gap-2">
-          {assistanceLifts.map((lift) => (
-            <label key={lift.id} className="flex items-center justify-between gap-3">
-              <span className="font-medium">{lift.name}</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                className={`${SMALL_INPUT_CLASS} w-20`}
-                value={assistancePercentages[lift.id] ?? ""}
-                onChange={(e) =>
-                  setAssistancePercentages((prev) => ({ ...prev, [lift.id]: e.target.value }))
-                }
-              />
-            </label>
-          ))}
-        </div>
-      </section>
+      {assistanceLifts.length > 0 && (
+        <section className={`${CARD_CLASS} ${CANDY_BG_CLASSES[3]} p-4`}>
+          <h2 className="mb-3 text-xl font-bold">Assistance % of TM</h2>
+          <div className="flex flex-col gap-2">
+            {assistanceLifts.map((lift) => (
+              <label key={lift.id} className="flex items-center justify-between gap-3">
+                <span className="font-medium">{lift.name}</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  className={`${SMALL_INPUT_CLASS} w-20`}
+                  value={assistancePercentages[lift.id] ?? ""}
+                  onChange={(e) =>
+                    setAssistancePercentages((prev) => ({ ...prev, [lift.id]: e.target.value }))
+                  }
+                />
+              </label>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className={`${CARD_CLASS} ${CANDY_BG_CLASSES[4]} p-4`}>
         <h2 className="mb-3 text-xl font-bold">Rest Timer Targets</h2>
@@ -259,7 +261,7 @@ export function SetupForm({
             />
           </label>
           <label className="flex items-center justify-between gap-3">
-            <span className="font-medium">Work sets -- main &amp; assistance (seconds)</span>
+            <span className="font-medium">Work sets (seconds)</span>
             <input
               type="number"
               inputMode="numeric"

@@ -15,7 +15,9 @@
     "db:backfill-usernames": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-usernames.ts",
     "db:backfill-swap-lifts": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-swap-lifts.ts",
     "db:backfill-day3-day4-swap": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-day3-day4-swap.ts",
-    "db:backfill-day3-day4-accessory-swap": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-day3-day4-accessory-swap.ts"
+    "db:backfill-day3-day4-accessory-swap": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-day3-day4-accessory-swap.ts",
+    "db:backfill-classic-531": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-classic-531.ts",
+    "db:backfill-regenerate-noncompleted-sessions": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-regenerate-noncompleted-sessions.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.1.0",

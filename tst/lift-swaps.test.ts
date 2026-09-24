@@ -42,57 +42,31 @@ describe("getSwapPool", () => {
     expect(getSwapPool(99, "main")).toEqual([]);
   });
 
-  it("returns the configured pool for a known day/slot", () => {
-    expect(getSwapPool(1, "assistance")).toEqual(["deadlift", "romanian-deadlift"]);
+  it("returns the configured singleton main pool for a known day", () => {
+    expect(getSwapPool(1, "main")).toEqual(["squat"]);
+    expect(getSwapPool(2, "main")).toEqual(["bench-press"]);
+    expect(getSwapPool(3, "main")).toEqual(["overhead-press"]);
+    expect(getSwapPool(4, "main")).toEqual(["deadlift"]);
+  });
+
+  it("returns an empty assistance pool for every day -- no assistance tier anymore", () => {
+    for (const day of [1, 2, 3, 4]) {
+      expect(getSwapPool(day, "assistance")).toEqual([]);
+    }
   });
 });
 
 describe("SWAP_POOLS data integrity", () => {
-  const currentDefaults: Record<number, { main: string; assistance: string }> = {
-    1: { main: "squat", assistance: "deadlift" },
-    2: { main: "bench-press", assistance: "overhead-press" },
-    3: { main: "bent-over-row", assistance: "lat-pulldown" },
-    4: { main: "hip-thrust", assistance: "single-leg-rdl" },
-  };
-
-  for (const day of [1, 2, 3, 4]) {
-    it(`day ${day}'s pools start with that day's current default lift`, () => {
-      expect(SWAP_POOLS[day].main[0]).toBe(currentDefaults[day].main);
-      expect(SWAP_POOLS[day].assistance[0]).toBe(currentDefaults[day].assistance);
-    });
-
-    it(`day ${day}'s pools have no duplicate slugs`, () => {
-      for (const slot of ["main", "assistance"] as const) {
-        const pool = SWAP_POOLS[day][slot];
-        expect(new Set(pool).size).toBe(pool.length);
-      }
-    });
-  }
+  it("every day's main pool is a singleton matching its one tracked lift", () => {
+    expect(SWAP_POOLS[1].main).toEqual(["squat"]);
+    expect(SWAP_POOLS[2].main).toEqual(["bench-press"]);
+    expect(SWAP_POOLS[3].main).toEqual(["overhead-press"]);
+    expect(SWAP_POOLS[4].main).toEqual(["deadlift"]);
+  });
 });
 
 describe("SWAP_ONLY_PARENT_LIFT", () => {
-  const trackedDefaults = new Set([
-    "squat",
-    "deadlift",
-    "bench-press",
-    "overhead-press",
-    "hip-thrust",
-    "single-leg-rdl",
-    "bent-over-row",
-    "lat-pulldown",
-  ]);
-
-  it("maps every swap-only variation to a real tracked (non-swap-only) parent lift", () => {
-    for (const [variant, parent] of Object.entries(SWAP_ONLY_PARENT_LIFT)) {
-      expect(trackedDefaults.has(parent)).toBe(true);
-      expect(variant).not.toBe(parent);
-    }
-  });
-
-  it("maps deadlift variations and bench variations as requested", () => {
-    expect(SWAP_ONLY_PARENT_LIFT["romanian-deadlift"]).toBe("deadlift");
-    expect(SWAP_ONLY_PARENT_LIFT["close-grip-bench-press"]).toBe("bench-press");
-    expect(SWAP_ONLY_PARENT_LIFT["incline-bench-press"]).toBe("bench-press");
-    expect(SWAP_ONLY_PARENT_LIFT["db-bench-press"]).toBe("bench-press");
+  it("is empty -- no swap-only variant lifts remain", () => {
+    expect(Object.keys(SWAP_ONLY_PARENT_LIFT)).toHaveLength(0);
   });
 });

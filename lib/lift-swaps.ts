@@ -8,29 +8,15 @@ export type SwapSlot = "main" | "assistance";
  * never changes what a new cycle defaults to. A pool of length 1 means
  * "not swappable" (session-client hides the arrows for it).
  */
+// Classic 5/3/1: exactly one main lift per day, no assistance tier at all
+// anymore -- every pool is a singleton, so no arrows ever render. Kept as a
+// real (if trivial) lookup rather than removed outright, since old
+// completed sessions may still render assistance-type rows historically.
 export const SWAP_POOLS: Record<number, Record<SwapSlot, string[]>> = {
-  1: {
-    main: ["squat"],
-    assistance: ["deadlift", "romanian-deadlift"],
-  },
-  2: {
-    main: ["bench-press"],
-    assistance: [
-      "overhead-press",
-      "bench-press",
-      "close-grip-bench-press",
-      "incline-bench-press",
-      "db-bench-press",
-    ],
-  },
-  3: {
-    main: ["bent-over-row", "overhead-press", "bench-press", "push-press", "lat-pulldown"],
-    assistance: ["lat-pulldown", "overhead-press", "bench-press", "push-press", "bent-over-row"],
-  },
-  4: {
-    main: ["hip-thrust", "single-leg-rdl", "squat", "deadlift"],
-    assistance: ["single-leg-rdl", "hip-thrust", "squat", "deadlift"],
-  },
+  1: { main: ["squat"], assistance: [] },
+  2: { main: ["bench-press"], assistance: [] },
+  3: { main: ["overhead-press"], assistance: [] },
+  4: { main: ["deadlift"], assistance: [] },
 };
 
 export function getSwapPool(dayNumber: number, slot: SwapSlot): string[] {
@@ -38,17 +24,11 @@ export function getSwapPool(dayNumber: number, slot: SwapSlot): string[] {
 }
 
 /**
- * Swap-only lifts that are just a variation on one of the 8 tracked
- * main/assistance lifts -- these reuse that lift's training max for the
- * current cycle instead of requiring their own history before they show a
- * real suggested weight.
+ * Swap-only lifts that are just a variation on one of the tracked main
+ * lifts, reusing that lift's cycle training max. Empty now that there are
+ * no swap-only variant lifts left.
  */
-export const SWAP_ONLY_PARENT_LIFT: Record<string, string> = {
-  "romanian-deadlift": "deadlift",
-  "close-grip-bench-press": "bench-press",
-  "incline-bench-press": "bench-press",
-  "db-bench-press": "bench-press",
-};
+export const SWAP_ONLY_PARENT_LIFT: Record<string, string> = {};
 
 /**
  * Circular next/prev slug within a pool. If currentSlug isn't in the pool
