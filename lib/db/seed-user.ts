@@ -9,7 +9,8 @@ const DAY_DEFS = [
   { dayNumber: 4, name: "Day 4" },
 ] as const;
 
-// Classic 5/3/1: one main lift per day, no assistance tier and no
+// Classic 5/3/1: one main lift per day, plus a fixed cross-day assistance
+// lift generated alongside it (see SWAP_POOLS/actions/cycles.ts). No
 // auto-populated accessories at all -- accessory work is entirely
 // freeform, added per-session via actions/custom-accessories.ts.
 const LIFT_DEFS = [
@@ -53,10 +54,20 @@ const LIFT_DEFS = [
     order: 1,
     isSwapOnly: false,
   },
+  {
+    slug: "romanian-deadlift",
+    name: "Romanian Deadlift",
+    role: "assistance",
+    bodyRegion: "lower",
+    equipmentType: "barbell",
+    dayNumber: 1,
+    order: 2,
+    isSwapOnly: true,
+  },
 ] as const;
 
 /**
- * Creates the standard 4-day/4-lift program for a user (no training maxes
+ * Creates the standard 4-day/5-lift program for a user (no training maxes
  * set). Shared by the one-time CLI seed script and the signup flow for new
  * accounts, so the exercise list only lives in one place.
  */

@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { cycles, cycleLiftTms, cycleAssistanceConfig, sessions, sets, lifts } from "@/lib/db/schema";
 import { getLiftsForUser, getActiveCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
+import { getSwapPool } from "@/lib/lift-swaps";
+import { DEFAULT_ASSISTANCE_PERCENTAGE } from "@/lib/constants";
 import {
   buildSessionSetPlan,
   type MainWaveConfig,
@@ -31,6 +33,11 @@ export async function createCycle(input: CreateCycleInput) {
   // session only -- they never get their own default-generated sets and
   // never require their own TM/percentage input at cycle setup.
   const allLifts = (await getLiftsForUser(user.id)).filter((l) => !l.isSwapOnly);
+  // Cross-day assistance lifts (e.g. Deadlift on Squat day) are each one of
+  // the 4 tracked main lifts used on a day other than their own home day --
+  // looked up by slug so a day's generation can pull in a different day's
+  // lift.
+  const liftBySlug = new Map(allLifts.map((l) => [l.slug, l]));
 
   const trackedLifts = allLifts.filter((l) => l.role === "main" || l.role === "assistance");
   const assistanceLifts = allLifts.filter((l) => l.role === "assistance");
@@ -152,12 +159,29 @@ export async function createCycle(input: CreateCycleInput) {
           equipmentType: l.equipmentType,
         }));
 
+        // Every day also gets a fixed cross-day assistance lift (Deadlift
+        // on Squat day, Squat on Deadlift day, etc. -- see
+        // lib/lift-swaps.ts SWAP_POOLS), 5x10 at a flat 50% of that lift's
+        // own TM for this cycle, unrelated to the day's main lift's TM.
+        const assistSlug = getSwapPool(day, "assistance")[0];
+        const assistLift = assistSlug ? liftBySlug.get(assistSlug) : undefined;
+        const assistancePercentages: Record<string, number> = {};
+        if (assistLift) {
+          dayLiftsInput.push({
+            liftId: assistLift.id,
+            role: "assistance",
+            trainingMax: input.trainingMaxes[assistLift.id],
+            equipmentType: assistLift.equipmentType,
+          });
+          assistancePercentages[assistLift.id] = DEFAULT_ASSISTANCE_PERCENTAGE;
+        }
+
         const plan = buildSessionSetPlan({
           dayLifts: dayLiftsInput,
           weekNumber: week as 1 | 2 | 3,
           mainWaveConfig: input.mainWaveConfig,
           warmupScheme: input.warmupScheme,
-          assistancePercentages: input.assistancePercentages,
+          assistancePercentages,
         });
 
         if (plan.length > 0) {

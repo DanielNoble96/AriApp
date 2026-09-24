@@ -8,15 +8,16 @@ export type SwapSlot = "main" | "assistance";
  * never changes what a new cycle defaults to. A pool of length 1 means
  * "not swappable" (session-client hides the arrows for it).
  */
-// Classic 5/3/1: exactly one main lift per day, no assistance tier at all
-// anymore -- every pool is a singleton, so no arrows ever render. Kept as a
-// real (if trivial) lookup rather than removed outright, since old
-// completed sessions may still render assistance-type rows historically.
+// Classic 5/3/1, one main lift per day (singleton pools, no swap arrows on
+// the main slot). Each day also has a fixed cross-day assistance lift --
+// index 0 of the assistance pool is what createCycle actually generates
+// (see actions/cycles.ts); Day 1's assistance additionally cycles to
+// Romanian Deadlift.
 export const SWAP_POOLS: Record<number, Record<SwapSlot, string[]>> = {
-  1: { main: ["squat"], assistance: [] },
-  2: { main: ["bench-press"], assistance: [] },
-  3: { main: ["overhead-press"], assistance: [] },
-  4: { main: ["deadlift"], assistance: [] },
+  1: { main: ["squat"], assistance: ["deadlift", "romanian-deadlift"] },
+  2: { main: ["bench-press"], assistance: ["overhead-press"] },
+  3: { main: ["overhead-press"], assistance: ["bench-press"] },
+  4: { main: ["deadlift"], assistance: ["squat"] },
 };
 
 export function getSwapPool(dayNumber: number, slot: SwapSlot): string[] {
@@ -25,10 +26,12 @@ export function getSwapPool(dayNumber: number, slot: SwapSlot): string[] {
 
 /**
  * Swap-only lifts that are just a variation on one of the tracked main
- * lifts, reusing that lift's cycle training max. Empty now that there are
- * no swap-only variant lifts left.
+ * lifts, reusing that lift's cycle training max instead of requiring their
+ * own logged history first.
  */
-export const SWAP_ONLY_PARENT_LIFT: Record<string, string> = {};
+export const SWAP_ONLY_PARENT_LIFT: Record<string, string> = {
+  "romanian-deadlift": "deadlift",
+};
 
 /**
  * Circular next/prev slug within a pool. If currentSlug isn't in the pool

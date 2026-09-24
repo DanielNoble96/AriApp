@@ -49,10 +49,11 @@ describe("getSwapPool", () => {
     expect(getSwapPool(4, "main")).toEqual(["deadlift"]);
   });
 
-  it("returns an empty assistance pool for every day -- no assistance tier anymore", () => {
-    for (const day of [1, 2, 3, 4]) {
-      expect(getSwapPool(day, "assistance")).toEqual([]);
-    }
+  it("returns each day's fixed cross-day assistance pool", () => {
+    expect(getSwapPool(1, "assistance")).toEqual(["deadlift", "romanian-deadlift"]);
+    expect(getSwapPool(2, "assistance")).toEqual(["overhead-press"]);
+    expect(getSwapPool(3, "assistance")).toEqual(["bench-press"]);
+    expect(getSwapPool(4, "assistance")).toEqual(["squat"]);
   });
 });
 
@@ -63,10 +64,26 @@ describe("SWAP_POOLS data integrity", () => {
     expect(SWAP_POOLS[3].main).toEqual(["overhead-press"]);
     expect(SWAP_POOLS[4].main).toEqual(["deadlift"]);
   });
+
+  it("every day's assistance lift is a different lift than its own main lift", () => {
+    for (const day of [1, 2, 3, 4]) {
+      expect(SWAP_POOLS[day].assistance[0]).not.toBe(SWAP_POOLS[day].main[0]);
+    }
+  });
+
+  it("has no duplicate slugs within any pool", () => {
+    for (const day of [1, 2, 3, 4]) {
+      for (const slot of ["main", "assistance"] as const) {
+        const pool = SWAP_POOLS[day][slot];
+        expect(new Set(pool).size).toBe(pool.length);
+      }
+    }
+  });
 });
 
 describe("SWAP_ONLY_PARENT_LIFT", () => {
-  it("is empty -- no swap-only variant lifts remain", () => {
-    expect(Object.keys(SWAP_ONLY_PARENT_LIFT)).toHaveLength(0);
+  it("maps Romanian Deadlift to Deadlift", () => {
+    expect(SWAP_ONLY_PARENT_LIFT["romanian-deadlift"]).toBe("deadlift");
+    expect(Object.keys(SWAP_ONLY_PARENT_LIFT)).toHaveLength(1);
   });
 });
