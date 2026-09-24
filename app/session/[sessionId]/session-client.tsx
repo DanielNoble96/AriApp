@@ -7,7 +7,7 @@ import { resetSession, completeSession, beginSession, pauseSession, resumeSessio
 import { swapGroupLift } from "@/actions/lift-swap";
 import { addCustomAccessory } from "@/actions/custom-accessories";
 import { getSwapPool, type SwapSlot } from "@/lib/lift-swaps";
-import { calcPlateBreakdown, calcPlateChange, formatPlateBreakdown } from "@/lib/plates";
+import { calcPlateBreakdown, formatPlateBreakdown } from "@/lib/plates";
 import { calcRepsNeededForPr } from "@/lib/prs";
 import { InolWidget } from "./inol-widget";
 import {
@@ -604,25 +604,9 @@ export function SessionClient({
                     </span>
                     {row.equipmentType === "barbell" &&
                       (() => {
-                        const prevRow = rows[index - 1];
-                        const hasKnownPrevLoad =
-                          prevRow != null &&
-                          prevRow.equipmentType === "barbell" &&
-                          prevRow.targetWeight != null;
-
-                        if (hasKnownPrevLoad) {
-                          const delta = Number(row.targetWeight) - Number(prevRow!.targetWeight);
-                          if (delta === 0) {
-                            return <div className="text-xs font-medium opacity-70">No plate change</div>;
-                          }
-                          return (
-                            <div className="text-xs font-medium opacity-70">
-                              {delta > 0 ? "Add" : "Remove"} {formatPlateBreakdown(calcPlateChange(delta))}{" "}
-                              / side
-                            </div>
-                          );
-                        }
-
+                        // Always the full per-side breakdown to load this
+                        // set's weight from an empty 45 lb bar -- not a
+                        // delta from whatever the previous set was.
                         const breakdown = calcPlateBreakdown(Number(row.targetWeight));
                         return (
                           <div className="text-xs font-medium opacity-70">
