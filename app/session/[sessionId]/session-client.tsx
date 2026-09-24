@@ -487,22 +487,21 @@ export function SessionClient({
         >
           Complete Session
         </button>
+        {(hasProgress || status !== "pending") && (
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleReset}
+            className={`flex-1 py-3 text-base ${DANGER_BUTTON_CLASS}`}
+          >
+            Reset Session
+          </button>
+        )}
       </div>
       {timerError && (
         <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
           {timerError}
         </p>
-      )}
-
-      {(hasProgress || status !== "pending") && (
-        <button
-          type="button"
-          disabled={isPending}
-          onClick={handleReset}
-          className={`self-start px-3 py-2 text-sm ${DANGER_BUTTON_CLASS}`}
-        >
-          Reset Session
-        </button>
       )}
       {resetError && (
         <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
