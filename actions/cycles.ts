@@ -99,13 +99,18 @@ export async function createCycle(input: CreateCycleInput) {
       }))
     );
 
-    await db.insert(cycleAssistanceConfig).values(
-      assistanceLifts.map((l) => ({
-        cycleId: cycle.id,
-        liftId: l.id,
-        percentageOfTm: String(input.assistancePercentages[l.id]),
-      }))
-    );
+    // drizzle's .values() throws if called with an empty array -- there are
+    // no assistance lifts left in the classic 5/3/1 program, so this is
+    // always empty now, but the insert is still skipped defensively.
+    if (assistanceLifts.length > 0) {
+      await db.insert(cycleAssistanceConfig).values(
+        assistanceLifts.map((l) => ({
+          cycleId: cycle.id,
+          liftId: l.id,
+          percentageOfTm: String(input.assistancePercentages[l.id]),
+        }))
+      );
+    }
 
     // Cache the latest TM on the lift itself so the *next* cycle's setup
     // screen can pre-fill from it.
