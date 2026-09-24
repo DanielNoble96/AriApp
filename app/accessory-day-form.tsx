@@ -10,6 +10,7 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [activityType, setActivityType] = useState<AccessoryActivityType>(ACCESSORY_ACTIVITY_OPTIONS[0]);
+  const [customActivityName, setCustomActivityName] = useState("");
   const [hours, setHours] = useState("");
   const [minutes, setMinutes] = useState("");
   const [distance, setDistance] = useState("");
@@ -19,6 +20,7 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
 
   function reset() {
     setActivityType(ACCESSORY_ACTIVITY_OPTIONS[0]);
+    setCustomActivityName("");
     setHours("");
     setMinutes("");
     setDistance("");
@@ -42,6 +44,10 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
       setError("Enter a valid distance.");
       return;
     }
+    if (activityType === "other" && !customActivityName.trim()) {
+      setError("Enter a name for the custom activity.");
+      return;
+    }
 
     startTransition(async () => {
       try {
@@ -49,6 +55,7 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
           cycleId,
           weekNumber,
           activityType,
+          customActivityName: activityType === "other" ? customActivityName.trim() : null,
           durationMinutes: durationMinutes > 0 ? durationMinutes : null,
           distanceMiles: distanceValue,
           caption: caption.trim() || null,
@@ -91,6 +98,16 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
           </button>
         ))}
       </div>
+
+      {activityType === "other" && (
+        <input
+          type="text"
+          placeholder="Name this activity..."
+          className={INPUT_CLASS}
+          value={customActivityName}
+          onChange={(e) => setCustomActivityName(e.target.value)}
+        />
+      )}
 
       <div className="flex items-center gap-2 text-sm font-bold">
         <span className="opacity-70">Duration</span>

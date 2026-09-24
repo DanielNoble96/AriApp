@@ -260,6 +260,10 @@ export const accessoryActivityTypeEnum = pgEnum("accessory_activity_type", [
   "pickleball",
   "paddle",
   "trail_run",
+  "skiing",
+  "snowboarding",
+  "hiking",
+  "other",
 ]);
 
 // A freeform cross-training/cardio entry, independent of the 4 fixed
@@ -275,6 +279,9 @@ export const accessoryDayEntries = pgTable("accessory_day_entries", {
     .references(() => cycles.id, { onDelete: "cascade" }),
   weekNumber: integer("week_number").notNull(),
   activityType: accessoryActivityTypeEnum("activity_type").notNull(),
+  // Set only when activityType is "other" -- the freeform name typed in
+  // for a custom activity not in the fixed list.
+  customActivityName: text("custom_activity_name"),
   durationMinutes: integer("duration_minutes"),
   distanceMiles: numeric("distance_miles", { precision: 6, scale: 2 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

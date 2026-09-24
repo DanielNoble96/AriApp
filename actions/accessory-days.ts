@@ -10,6 +10,8 @@ export interface LogAccessoryDayInput {
   cycleId: string;
   weekNumber: number;
   activityType: AccessoryActivityType;
+  /** Required (non-empty) when activityType is "other"; ignored otherwise. */
+  customActivityName: string | null;
   durationMinutes: number | null;
   distanceMiles: number | null;
   caption: string | null;
@@ -33,6 +35,11 @@ export async function logAccessoryDay(input: LogAccessoryDayInput) {
     throw new Error("Invalid week number.");
   }
 
+  const trimmedCustomName = input.customActivityName?.trim() || null;
+  if (input.activityType === "other" && !trimmedCustomName) {
+    throw new Error("Enter a name for the custom activity.");
+  }
+
   const [entry] = await db
     .insert(accessoryDayEntries)
     .values({
@@ -40,6 +47,7 @@ export async function logAccessoryDay(input: LogAccessoryDayInput) {
       cycleId: input.cycleId,
       weekNumber: input.weekNumber,
       activityType: input.activityType,
+      customActivityName: input.activityType === "other" ? trimmedCustomName : null,
       durationMinutes: input.durationMinutes,
       distanceMiles: input.distanceMiles != null ? String(input.distanceMiles) : null,
     })
@@ -58,6 +66,7 @@ export async function logAccessoryDay(input: LogAccessoryDayInput) {
 
 export interface UpdateAccessoryDayInput {
   activityType: AccessoryActivityType;
+  customActivityName: string | null;
   durationMinutes: number | null;
   distanceMiles: number | null;
 }
@@ -71,10 +80,16 @@ export async function updateAccessoryDay(entryId: string, input: UpdateAccessory
   if (!entry) throw new Error("Entry not found");
   if (entry.userId !== user.id) throw new Error("Forbidden");
 
+  const trimmedCustomName = input.customActivityName?.trim() || null;
+  if (input.activityType === "other" && !trimmedCustomName) {
+    throw new Error("Enter a name for the custom activity.");
+  }
+
   await db
     .update(accessoryDayEntries)
     .set({
       activityType: input.activityType,
+      customActivityName: input.activityType === "other" ? trimmedCustomName : null,
       durationMinutes: input.durationMinutes,
       distanceMiles: input.distanceMiles != null ? String(input.distanceMiles) : null,
     })

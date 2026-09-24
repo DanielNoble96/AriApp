@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteAccessoryDay, updateAccessoryDay } from "@/actions/accessory-days";
 import { ACCESSORY_ACTIVITY_OPTIONS, ACCESSORY_ACTIVITY_LABELS, type AccessoryActivityType } from "@/lib/constants";
-import { BORDER_CLASS, SHADOW_SM_CLASS, CARD_CLASS, COMPACT_INPUT_CLASS, BUTTON_CLASS } from "@/lib/ui";
+import { BORDER_CLASS, SHADOW_SM_CLASS, CARD_CLASS, INPUT_CLASS, COMPACT_INPUT_CLASS, BUTTON_CLASS } from "@/lib/ui";
 
 function formatDuration(totalMinutes: number): string {
   const h = Math.floor(totalMinutes / 60);
@@ -17,6 +17,7 @@ function formatDuration(totalMinutes: number): string {
 export interface AccessoryDayEntryData {
   id: string;
   activityType: AccessoryActivityType;
+  customActivityName: string | null;
   durationMinutes: number | null;
   distanceMiles: string | null;
 }
@@ -25,6 +26,7 @@ export function AccessoryDayRow({ entry }: { entry: AccessoryDayEntryData }) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [activityType, setActivityType] = useState<AccessoryActivityType>(entry.activityType);
+  const [customActivityName, setCustomActivityName] = useState(entry.customActivityName ?? "");
   const [hours, setHours] = useState(
     entry.durationMinutes ? String(Math.floor(entry.durationMinutes / 60)) : ""
   );
@@ -77,11 +79,16 @@ export function AccessoryDayRow({ entry }: { entry: AccessoryDayEntryData }) {
       setError("Enter a valid distance.");
       return;
     }
+    if (activityType === "other" && !customActivityName.trim()) {
+      setError("Enter a name for the custom activity.");
+      return;
+    }
 
     startTransition(async () => {
       try {
         await updateAccessoryDay(entry.id, {
           activityType,
+          customActivityName: activityType === "other" ? customActivityName.trim() : null,
           durationMinutes: durationMinutes > 0 ? durationMinutes : null,
           distanceMiles: distanceValue,
         });
@@ -111,6 +118,16 @@ export function AccessoryDayRow({ entry }: { entry: AccessoryDayEntryData }) {
             </button>
           ))}
         </div>
+
+        {activityType === "other" && (
+          <input
+            type="text"
+            placeholder="Name this activity..."
+            className={INPUT_CLASS}
+            value={customActivityName}
+            onChange={(e) => setCustomActivityName(e.target.value)}
+          />
+        )}
 
         <div className="flex items-center gap-2 text-sm font-bold">
           <span className="opacity-70">Duration</span>
@@ -170,7 +187,11 @@ export function AccessoryDayRow({ entry }: { entry: AccessoryDayEntryData }) {
       <div
         className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} flex items-center justify-between gap-2 rounded-lg bg-brutal-white p-3 opacity-60`}
       >
-        <span className="font-bold">{ACCESSORY_ACTIVITY_LABELS[entry.activityType]}</span>
+        <span className="font-bold">
+          {entry.activityType === "other" && entry.customActivityName
+            ? entry.customActivityName
+            : ACCESSORY_ACTIVITY_LABELS[entry.activityType]}
+        </span>
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium opacity-70">{summary}</span>
           <button

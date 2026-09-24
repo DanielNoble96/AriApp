@@ -170,6 +170,7 @@ export interface FeedPost {
   dayNumber: number | null;
   dayName: string | null;
   activityType: AccessoryActivityType | null;
+  customActivityName: string | null;
   durationMinutes: number | null;
   distanceMiles: string | null;
   prs: FeedPostPr[];
@@ -194,6 +195,7 @@ export async function getFeedPosts(userId: string): Promise<FeedPost[]> {
       dayNumber: sessions.dayNumber,
       dayName: programDays.name,
       activityType: accessoryDayEntries.activityType,
+      customActivityName: accessoryDayEntries.customActivityName,
       durationMinutes: accessoryDayEntries.durationMinutes,
       distanceMiles: accessoryDayEntries.distanceMiles,
     })

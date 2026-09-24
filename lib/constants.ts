@@ -65,9 +65,15 @@ export type AccessoryActivityType =
   | "tennis"
   | "pickleball"
   | "paddle"
-  | "trail_run";
+  | "trail_run"
+  | "skiing"
+  | "snowboarding"
+  | "hiking"
+  | "other";
 
 // Display order for the activity-type picker when logging an accessory day.
+// "other" (custom) is always last -- picking it reveals a freeform name
+// input (see AccessoryDayForm/AccessoryDayRow).
 export const ACCESSORY_ACTIVITY_OPTIONS: AccessoryActivityType[] = [
   "run",
   "bike",
@@ -79,6 +85,10 @@ export const ACCESSORY_ACTIVITY_OPTIONS: AccessoryActivityType[] = [
   "pickleball",
   "paddle",
   "trail_run",
+  "skiing",
+  "snowboarding",
+  "hiking",
+  "other",
 ];
 
 export const ACCESSORY_ACTIVITY_LABELS: Record<AccessoryActivityType, string> = {
@@ -92,4 +102,8 @@ export const ACCESSORY_ACTIVITY_LABELS: Record<AccessoryActivityType, string> = 
   pickleball: "Pickleball",
   paddle: "Paddle",
   trail_run: "Trail Run",
+  skiing: "Skiing",
+  snowboarding: "Snowboarding",
+  hiking: "Hiking",
+  other: "Custom",
 };

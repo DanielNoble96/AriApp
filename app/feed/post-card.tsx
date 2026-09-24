@@ -47,6 +47,12 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
   const isAccessoryDay = post.kind === "accessory_day";
   const inol = post.inolScore != null ? Number(post.inolScore) : null;
   const tier = inol != null ? getInolTier(inol) : null;
+  const activityLabel =
+    post.activityType === "other"
+      ? post.customActivityName ?? ACCESSORY_ACTIVITY_LABELS.other
+      : post.activityType
+        ? ACCESSORY_ACTIVITY_LABELS[post.activityType]
+        : null;
 
   function handleSaveCaption() {
     setError(null);
@@ -125,17 +131,13 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
       <div className="flex items-center justify-between">
         <span className="font-bold">@{post.authorUsername}</span>
         {isAccessoryDay ? (
-          post.activityType && (
-            <span className="text-xs font-medium opacity-70">{ACCESSORY_ACTIVITY_LABELS[post.activityType]}</span>
-          )
+          activityLabel && <span className="text-xs font-medium opacity-70">{activityLabel}</span>
         ) : (
           <span className="text-xs font-medium opacity-70">{formatDate(post.createdAt)}</span>
         )}
       </div>
       <p className="mt-1 text-sm font-medium opacity-80">
-        {isAccessoryDay
-          ? `logged ${post.activityType ? ACCESSORY_ACTIVITY_LABELS[post.activityType].toLowerCase() : "an activity"}`
-          : "completed a workout"}
+        {isAccessoryDay ? `logged ${activityLabel ? activityLabel.toLowerCase() : "an activity"}` : "completed a workout"}
       </p>
       {isAccessoryDay && (post.durationMinutes != null || post.distanceMiles != null) && (
         <p className="text-xs font-medium opacity-70">
