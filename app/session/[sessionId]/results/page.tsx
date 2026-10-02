@@ -51,9 +51,14 @@ export default async function SessionResultsPage({
       </div>
       {post && <ResultsCaptionEditor postId={post.id} initialCaption={post.caption ?? ""} />}
       {post && <ResultsPhotoUploader postId={post.id} photoUrls={photos.map((p) => p.photoUrl)} />}
-      <Link href="/" className={`${PILL_CLASS} bg-brutal-cyan`}>
-        ← Home
-      </Link>
+      <div className="flex gap-3">
+        <Link href="/" className={`${PILL_CLASS} bg-brutal-cyan`}>
+          ← Home
+        </Link>
+        <Link href="/feed" className={`${PILL_CLASS} bg-brutal-yellow`}>
+          Go to Feed
+        </Link>
+      </div>
     </main>
   );
 }
