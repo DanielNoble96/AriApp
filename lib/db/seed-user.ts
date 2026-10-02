@@ -3,10 +3,10 @@ import { db } from "./index";
 import { programDays, lifts } from "./schema";
 
 const DAY_DEFS = [
-  { dayNumber: 1, name: "Day 1" },
-  { dayNumber: 2, name: "Day 2" },
-  { dayNumber: 3, name: "Day 3" },
-  { dayNumber: 4, name: "Day 4" },
+  { dayNumber: 1, name: "Squat" },
+  { dayNumber: 2, name: "Bench Press" },
+  { dayNumber: 3, name: "Overhead Press" },
+  { dayNumber: 4, name: "Deadlift" },
 ] as const;
 
 // Classic 5/3/1: one main lift per day, plus a fixed cross-day assistance

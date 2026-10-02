@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getActiveCycle, getSessionsForCycle, getAccessoryDaysForCycle } from "@/lib/db/queries";
+import { getProgramDayNames, getActiveCycle, getSessionsForCycle, getAccessoryDaysForCycle } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
 import { CARD_CLASS, PILL_CLASS, CANDY_BG_CLASSES, BORDER_CLASS, SHADOW_SM_CLASS } from "@/lib/ui";
 import { DAY_DISPLAY_ORDER } from "@/lib/constants";
@@ -23,6 +23,7 @@ export default async function Home() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
 
+  const dayNames = await getProgramDayNames(user.id);
   const activeCycle = await getActiveCycle(user.id);
   const cycleSessions = activeCycle ? await getSessionsForCycle(activeCycle.id) : [];
   const accessoryDays = activeCycle ? await getAccessoryDaysForCycle(activeCycle.id) : [];
@@ -90,7 +91,7 @@ export default async function Home() {
                           session.status === "completed" ? "opacity-60" : ""
                         }`}
                       >
-                        <span className="font-bold">{`Day ${session.dayNumber}`}</span>
+                        <span className="font-bold">{dayNames.get(session.dayNumber) ?? `Day ${session.dayNumber}`}</span>
                         <span className={`${PILL_CLASS} bg-brutal-white text-xs`}>
                           {STATUS_LABEL[session.status]}
                         </span>

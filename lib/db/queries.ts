@@ -23,6 +23,15 @@ export async function getLiftsForUser(userId: string) {
     .orderBy(asc(programDays.dayNumber), asc(lifts.orderInDay));
 }
 
+/** dayNumber -> display name (the day's main lift) for the user. */
+export async function getProgramDayNames(userId: string): Promise<Map<number, string>> {
+  const rows = await db
+    .select({ dayNumber: programDays.dayNumber, name: programDays.name })
+    .from(programDays)
+    .where(eq(programDays.userId, userId));
+  return new Map(rows.map((r) => [r.dayNumber, r.name]));
+}
+
 export async function getActiveCycle(userId: string) {
   // Ordering is defense-in-depth: createCycle always completes any prior
   // active cycle before starting a new one, so there should only ever be
