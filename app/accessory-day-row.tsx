@@ -10,14 +10,6 @@ function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-function formatDuration(totalMinutes: number): string {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  if (h === 0) return `${m} min`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
-}
-
 export interface AccessoryDayEntryData {
   id: string;
   activityType: AccessoryActivityType;
@@ -43,14 +35,6 @@ export function AccessoryDayRow({ entry }: { entry: AccessoryDayEntryData }) {
   );
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  const summary =
-    [
-      entry.durationMinutes != null ? formatDuration(entry.durationMinutes) : null,
-      entry.distanceMiles != null ? `${Number(entry.distanceMiles)} mi` : null,
-    ]
-      .filter(Boolean)
-      .join(" · ") || "Logged";
 
   function handleDelete() {
     if (!confirm("Remove this accessory day? This also removes it from your feed.")) {
@@ -199,7 +183,7 @@ export function AccessoryDayRow({ entry }: { entry: AccessoryDayEntryData }) {
         </span>
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium opacity-70">
-            {formatDate(entry.createdAt)} · {summary}
+            {formatDate(entry.createdAt)}
           </span>
           <button
             type="button"
