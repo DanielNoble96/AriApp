@@ -45,9 +45,9 @@ export async function completeSet(setId: string, actualWeight: number | null, ac
 /**
  * Appends a bonus set to the end of a lift's Work Sets or Accessory group,
  * shifting every later set's orderIndex up by one to make room. Work Sets
- * extras copy the last set's weight/reps and are marked AMRAP (an extra
- * work set is for another all-out effort); Accessory extras are blank,
- * matching the existing freeform accessory rows.
+ * extras copy the last set's weight/reps but are NOT AMRAP -- only the
+ * prescribed 3rd work set is; Accessory extras are blank, matching the
+ * existing freeform accessory rows.
  */
 export async function addExtraSet(
   sessionId: string,
@@ -83,7 +83,7 @@ export async function addExtraSet(
       liftId,
       setType,
       orderIndex: insertionIndex,
-      isAmrap: setType === "main",
+      isAmrap: false,
       isExtra: true,
       targetWeight: setType === "main" ? lastOfGroup.targetWeight : null,
       targetReps: setType === "main" ? lastOfGroup.targetReps : null,
