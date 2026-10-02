@@ -6,6 +6,10 @@ import { deleteAccessoryDay, updateAccessoryDay } from "@/actions/accessory-days
 import { ACCESSORY_ACTIVITY_OPTIONS, ACCESSORY_ACTIVITY_LABELS, type AccessoryActivityType } from "@/lib/constants";
 import { BORDER_CLASS, SHADOW_SM_CLASS, CARD_CLASS, INPUT_CLASS, COMPACT_INPUT_CLASS, BUTTON_CLASS } from "@/lib/ui";
 
+function formatDate(date: Date): string {
+  return new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
 function formatDuration(totalMinutes: number): string {
   const h = Math.floor(totalMinutes / 60);
   const m = totalMinutes % 60;
@@ -20,6 +24,7 @@ export interface AccessoryDayEntryData {
   customActivityName: string | null;
   durationMinutes: number | null;
   distanceMiles: string | null;
+  createdAt: Date;
 }
 
 export function AccessoryDayRow({ entry }: { entry: AccessoryDayEntryData }) {
@@ -193,7 +198,9 @@ export function AccessoryDayRow({ entry }: { entry: AccessoryDayEntryData }) {
             : ACCESSORY_ACTIVITY_LABELS[entry.activityType]}
         </span>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium opacity-70">{summary}</span>
+          <span className="text-xs font-medium opacity-70">
+            {formatDate(entry.createdAt)} · {summary}
+          </span>
           <button
             type="button"
             onClick={() => setIsEditing(true)}

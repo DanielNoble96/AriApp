@@ -131,7 +131,10 @@ export function PostCard({ post, currentUserId }: { post: FeedPost; currentUserI
       <div className="flex items-center justify-between">
         <span className="font-bold">@{post.authorUsername}</span>
         {isAccessoryDay ? (
-          activityLabel && <span className="text-xs font-medium opacity-70">{activityLabel}</span>
+          <span className="text-xs font-medium opacity-70">
+            {activityLabel ? `${activityLabel} · ` : ""}
+            {formatDate(post.createdAt)}
+          </span>
         ) : (
           <span className="text-xs font-medium opacity-70">{formatDate(post.createdAt)}</span>
         )}
