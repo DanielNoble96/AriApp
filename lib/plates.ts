@@ -53,7 +53,7 @@ export function calcPlateChange(
   return calcPlateBreakdown(Math.abs(deltaWeight), 0, plateSizes).perSide;
 }
 
-/** e.g. [45, 45, 10] -> "2x45 + 1x10". Empty array -> "Bar only". */
+/** e.g. [45, 45, 10] -> "2x45 + 10", [5, 2.5] -> "5 + 2.5". Empty array -> "Bar only". */
 export function formatPlateBreakdown(perSide: number[]): string {
   if (perSide.length === 0) return "Bar only";
 
@@ -64,6 +64,6 @@ export function formatPlateBreakdown(perSide: number[]): string {
 
   return [...counts.entries()]
     .sort((a, b) => b[0] - a[0])
-    .map(([plate, count]) => `${count}x${plate}`)
+    .map(([plate, count]) => (count === 1 ? `${plate}` : `${count}x${plate}`))
     .join(" + ");
 }

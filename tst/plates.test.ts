@@ -75,11 +75,16 @@ describe("formatPlateBreakdown", () => {
     expect(formatPlateBreakdown([45, 45])).toBe("2x45");
   });
 
+  it("shows a single plate without a count", () => {
+    expect(formatPlateBreakdown([5, 2.5])).toBe("5 + 2.5");
+    expect(formatPlateBreakdown([10, 2.5])).toBe("10 + 2.5");
+  });
+
   it("lists distinct plates largest first", () => {
-    expect(formatPlateBreakdown([45, 5])).toBe("1x45 + 1x5");
+    expect(formatPlateBreakdown([45, 5])).toBe("45 + 5");
   });
 
   it("handles a mix of repeated and distinct plates", () => {
-    expect(formatPlateBreakdown([45, 45, 10, 2.5])).toBe("2x45 + 1x10 + 1x2.5");
+    expect(formatPlateBreakdown([45, 45, 10, 2.5])).toBe("2x45 + 10 + 2.5");
   });
 });
