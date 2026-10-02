@@ -12,11 +12,12 @@ export type SwapSlot = "main" | "assistance";
 // the main slot). Each day also has a fixed cross-day assistance lift --
 // index 0 of the assistance pool is what createCycle actually generates
 // (see actions/cycles.ts); Day 1's assistance additionally cycles to
-// Romanian Deadlift.
+// Romanian Deadlift, and the Bench/Overhead Press days cycle between
+// Bench Press and Overhead Press.
 export const SWAP_POOLS: Record<number, Record<SwapSlot, string[]>> = {
   1: { main: ["squat"], assistance: ["deadlift", "romanian-deadlift"] },
-  2: { main: ["bench-press"], assistance: ["overhead-press"] },
-  3: { main: ["overhead-press"], assistance: ["bench-press"] },
+  2: { main: ["bench-press"], assistance: ["overhead-press", "bench-press"] },
+  3: { main: ["overhead-press"], assistance: ["bench-press", "overhead-press"] },
   4: { main: ["deadlift"], assistance: ["squat"] },
 };
 

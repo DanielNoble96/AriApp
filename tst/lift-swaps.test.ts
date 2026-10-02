@@ -51,8 +51,8 @@ describe("getSwapPool", () => {
 
   it("returns each day's fixed cross-day assistance pool", () => {
     expect(getSwapPool(1, "assistance")).toEqual(["deadlift", "romanian-deadlift"]);
-    expect(getSwapPool(2, "assistance")).toEqual(["overhead-press"]);
-    expect(getSwapPool(3, "assistance")).toEqual(["bench-press"]);
+    expect(getSwapPool(2, "assistance")).toEqual(["overhead-press", "bench-press"]);
+    expect(getSwapPool(3, "assistance")).toEqual(["bench-press", "overhead-press"]);
     expect(getSwapPool(4, "assistance")).toEqual(["squat"]);
   });
 });
