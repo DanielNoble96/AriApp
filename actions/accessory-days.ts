@@ -55,13 +55,16 @@ export async function logAccessoryDay(input: LogAccessoryDayInput) {
 
   const trimmedCaption = input.caption?.trim();
 
-  await db.insert(posts).values({
-    userId: user.id,
-    accessoryDayEntryId: entry.id,
-    caption: trimmedCaption ? trimmedCaption : null,
-  });
+  const [post] = await db
+    .insert(posts)
+    .values({
+      userId: user.id,
+      accessoryDayEntryId: entry.id,
+      caption: trimmedCaption ? trimmedCaption : null,
+    })
+    .returning();
 
-  return entry;
+  return { ...entry, postId: post.id };
 }
 
 export interface UpdateAccessoryDayInput {

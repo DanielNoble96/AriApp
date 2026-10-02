@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSessionById, getSetsForSession } from "@/lib/db/queries";
 import { getSessionUser } from "@/lib/auth";
+import { eq, asc } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { posts, postPhotos } from "@/lib/db/schema";
+import { ResultsPhotoUploader } from "./photo-uploader";
 import { calcTotalInol, getInolTier, INOL_TIER_LABEL } from "@/lib/inol";
 import { CARD_CLASS, PILL_CLASS } from "@/lib/ui";
 
@@ -31,6 +35,11 @@ export default async function SessionResultsPage({
   const inol = calcTotalInol(sessionSets);
   const tier = getInolTier(inol);
 
+  const [post] = await db.select().from(posts).where(eq(posts.sessionId, sessionId));
+  const photos = post
+    ? await db.select().from(postPhotos).where(eq(postPhotos.postId, post.id)).orderBy(asc(postPhotos.createdAt))
+    : [];
+
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-6 p-6 text-center">
       <p className="text-2xl font-bold">Congrats on completing your workout!</p>
@@ -39,6 +48,7 @@ export default async function SessionResultsPage({
         <p className="text-6xl font-bold">{inol.toFixed(2)}</p>
         <p className="text-xl font-bold">{INOL_TIER_LABEL[tier]}</p>
       </div>
+      {post && <ResultsPhotoUploader postId={post.id} photoUrls={photos.map((p) => p.photoUrl)} />}
       <Link href="/" className={`${PILL_CLASS} bg-brutal-cyan`}>
         ← Home
       </Link>

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { uploadPostPhotos, MAX_PHOTOS_PER_POST } from "@/lib/upload-post-photos";
 import { logAccessoryDay } from "@/actions/accessory-days";
 import { ACCESSORY_ACTIVITY_OPTIONS, ACCESSORY_ACTIVITY_LABELS, type AccessoryActivityType } from "@/lib/constants";
 import { BORDER_CLASS, SHADOW_SM_CLASS, CARD_CLASS, INPUT_CLASS, COMPACT_INPUT_CLASS, BUTTON_CLASS } from "@/lib/ui";
@@ -15,6 +16,7 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
   const [minutes, setMinutes] = useState("");
   const [distance, setDistance] = useState("");
   const [caption, setCaption] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -25,6 +27,7 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
     setMinutes("");
     setDistance("");
     setCaption("");
+    setPhotos([]);
     setError(null);
   }
 
@@ -50,8 +53,9 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
     }
 
     startTransition(async () => {
+      let photoFailed = false;
       try {
-        await logAccessoryDay({
+        const logged = await logAccessoryDay({
           cycleId,
           weekNumber,
           activityType,
@@ -60,9 +64,19 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
           distanceMiles: distanceValue,
           caption: caption.trim() || null,
         });
+        if (photos.length > 0) {
+          try {
+            await uploadPostPhotos(logged.postId, photos);
+          } catch {
+            photoFailed = true;
+          }
+        }
       } catch {
         setError("Couldn't log that activity -- try again.");
         return;
+      }
+      if (photoFailed) {
+        alert("Activity logged, but the photo couldn't be uploaded. You can add it from the feed.");
       }
       reset();
       setIsOpen(false);
@@ -151,6 +165,24 @@ export function AccessoryDayForm({ cycleId, weekNumber }: { cycleId: string; wee
         value={caption}
         onChange={(e) => setCaption(e.target.value)}
       />
+
+      <label className={`${BORDER_CLASS} ${SHADOW_SM_CLASS} flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-brutal-white p-2 text-xs font-bold`}>
+        📷 {photos.length > 0 ? `${photos.length} photo${photos.length > 1 ? "s" : ""} selected` : "Add photos (optional)"}
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const files = Array.from(e.target.files ?? []).slice(0, MAX_PHOTOS_PER_POST);
+            if (files.some((f) => !f.type.startsWith("image/"))) {
+              setError("Files must be images.");
+              return;
+            }
+            setPhotos(files);
+          }}
+        />
+      </label>
 
       {error && <p className="text-xs font-bold text-red-600">{error}</p>}
 
