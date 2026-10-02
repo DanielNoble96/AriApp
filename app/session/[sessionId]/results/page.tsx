@@ -6,6 +6,7 @@ import { eq, asc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { posts, postPhotos } from "@/lib/db/schema";
 import { ResultsPhotoUploader } from "./photo-uploader";
+import { ResultsCaptionEditor } from "./caption-editor";
 import { calcTotalInol, getInolTier, INOL_TIER_LABEL } from "@/lib/inol";
 import { CARD_CLASS, PILL_CLASS } from "@/lib/ui";
 
@@ -48,6 +49,7 @@ export default async function SessionResultsPage({
         <p className="text-6xl font-bold">{inol.toFixed(2)}</p>
         <p className="text-xl font-bold">{INOL_TIER_LABEL[tier]}</p>
       </div>
+      {post && <ResultsCaptionEditor postId={post.id} initialCaption={post.caption ?? ""} />}
       {post && <ResultsPhotoUploader postId={post.id} photoUrls={photos.map((p) => p.photoUrl)} />}
       <Link href="/" className={`${PILL_CLASS} bg-brutal-cyan`}>
         ← Home
