@@ -53,7 +53,7 @@ export default async function SessionResultsPage({
       {post && <ResultsPhotoUploader postId={post.id} photoUrls={photos.map((p) => p.photoUrl)} />}
       <div className="flex gap-3">
         <Link href="/" className={`${PILL_CLASS} bg-brutal-cyan`}>
-          ← Home
+          Home
         </Link>
         <Link href="/feed" className={`${PILL_CLASS} bg-brutal-yellow`}>
           Go to Feed
