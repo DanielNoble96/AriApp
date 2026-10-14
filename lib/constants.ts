@@ -7,6 +7,10 @@ export const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 
 export const ROUND_INCREMENT = 5;
 
+// How much heavier the optional post-AMRAP "challenge" set is -- the
+// smallest jump a standard bar can make (one 2.5 lb plate per side).
+export const CHALLENGE_INCREMENT_LBS = 5;
+
 // A standard barbell's own weight -- no barbell set should ever be
 // calculated below this, since you physically can't load a bar to less
 // than what it weighs empty.

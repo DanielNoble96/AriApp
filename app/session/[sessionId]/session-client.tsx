@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { completeSet, addExtraSet, removeSet } from "@/actions/sets";
+import { completeSet, addExtraSet, addChallengeSet, removeSet } from "@/actions/sets";
 import { resetSession, completeSession, beginSession, pauseSession, resumeSession } from "@/actions/sessions";
 import { swapGroupLift } from "@/actions/lift-swap";
 import { addCustomAccessory } from "@/actions/custom-accessories";
 import { getSwapPool, type SwapSlot } from "@/lib/lift-swaps";
 import { calcPlateBreakdown, formatPlateBreakdown } from "@/lib/plates";
 import { calcRepsNeededForPr } from "@/lib/prs";
+import { CHALLENGE_INCREMENT_LBS } from "@/lib/constants";
 import { InolWidget } from "./inol-widget";
 import {
   BUTTON_CLASS,
@@ -148,6 +149,7 @@ export function SessionClient({
   const [timerError, setTimerError] = useState<string | null>(null);
   const [addSetError, setAddSetError] = useState<string | null>(null);
   const [swapError, setSwapError] = useState<string | null>(null);
+  const [dismissedChallenges, setDismissedChallenges] = useState<Set<string>>(new Set());
   const [customAccessoryDraft, setCustomAccessoryDraft] = useState("");
   const [addAccessoryError, setAddAccessoryError] = useState<string | null>(null);
   const [alertedAnchorMs, setAlertedAnchorMs] = useState<number | null>(null);
@@ -420,6 +422,40 @@ export function SessionClient({
         },
       ]);
       setCustomAccessoryDraft("");
+    });
+  }
+
+  function handleChallenge(amrapRow: SetRow) {
+    setAddSetError(null);
+    startTransition(async () => {
+      let newSet;
+      try {
+        newSet = await addChallengeSet(sessionId, amrapRow.id);
+      } catch {
+        setAddSetError("Couldn't add the challenge set -- try again.");
+        return;
+      }
+      setRows((prev) => {
+        const groupRows = prev.filter((r) => r.liftId === amrapRow.liftId && r.setType === "main");
+        const lastOfGroup = groupRows[groupRows.length - 1];
+        const insertAt = prev.findIndex((r) => r.id === lastOfGroup.id) + 1;
+        const newRow: SetRow = {
+          ...amrapRow,
+          id: newSet.id,
+          orderIndex: newSet.orderIndex,
+          isAmrap: false,
+          isExtra: true,
+          targetWeight: newSet.targetWeight,
+          targetReps: newSet.targetReps,
+          intensityPercentage: newSet.intensityPercentage,
+          actualWeight: null,
+          actualReps: null,
+          completedAt: null,
+        };
+        const next = [...prev];
+        next.splice(insertAt, 0, newRow);
+        return next;
+      });
     });
   }
 
@@ -704,6 +740,39 @@ export function SessionClient({
                 </span>
               </div>
             )}
+            {row.isAmrap &&
+              !row.isExtra &&
+              isDone &&
+              row.actualReps != null &&
+              !dismissedChallenges.has(row.id) &&
+              !rows.some((r) => r.liftId === row.liftId && r.setType === "main" && r.isExtra) && (
+                <div className={`${CARD_CLASS} mt-2 flex flex-col gap-2 bg-brutal-yellow p-3`}>
+                  <p className="text-sm font-bold">
+                    Optional challenge: {fmt(String(Number(row.actualWeight ?? row.targetWeight) + CHALLENGE_INCREMENT_LBS))} lb ×{" "}
+                    {Math.max(1, row.actualReps)}
+                  </p>
+                  <p className="text-xs font-medium opacity-80">
+                    Just {CHALLENGE_INCREMENT_LBS} lb more than that set -- up for one more?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={isPending}
+                      onClick={() => handleChallenge(row)}
+                      className={`flex-1 py-1 text-sm ${BUTTON_CLASS}`}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDismissedChallenges((prev) => new Set(prev).add(row.id))}
+                      className="px-3 text-sm font-bold opacity-70 hover:opacity-100"
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </div>
+              )}
             {errorId === row.id && (
               <p className="mt-1 text-xs font-bold text-red-600">Enter a valid rep count.</p>
             )}

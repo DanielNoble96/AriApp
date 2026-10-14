@@ -4,6 +4,7 @@ import { eq, and, asc, gte, gt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { sets, sessions } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { CHALLENGE_INCREMENT_LBS } from "@/lib/constants";
 
 /**
  * Records actual weight/reps for a set and marks it complete. Also works to
@@ -128,4 +129,73 @@ export async function removeSet(setId: string) {
     .update(sets)
     .set({ orderIndex: sql`${sets.orderIndex} - 1` })
     .where(and(eq(sets.sessionId, owned.sessionId), gt(sets.orderIndex, owned.orderIndex)));
+}
+
+/**
+ * Adds the optional post-AMRAP "challenge" set: one extra work set right
+ * after the group, a tiny bit heavier (CHALLENGE_INCREMENT_LBS) than what
+ * the AMRAP set was actually lifted at, aiming to match the reps just
+ * logged. Its stored %TM is scaled by the weight bump so INOL stays
+ * consistent with the weight-aware calculation in lib/inol.ts.
+ */
+export async function addChallengeSet(sessionId: string, amrapSetId: string) {
+  const user = await getSessionUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const [session] = await db.select().from(sessions).where(eq(sessions.id, sessionId));
+  if (!session) throw new Error("Session not found");
+  if (session.userId !== user.id) throw new Error("Forbidden");
+
+  const [amrap] = await db
+    .select()
+    .from(sets)
+    .where(and(eq(sets.id, amrapSetId), eq(sets.sessionId, sessionId)));
+  if (!amrap) throw new Error("Set not found");
+  if (!amrap.isAmrap || amrap.isExtra || amrap.setType !== "main") {
+    throw new Error("Only an AMRAP work set can be challenged.");
+  }
+  if (amrap.completedAt == null || amrap.actualReps == null) {
+    throw new Error("Finish the AMRAP set first.");
+  }
+
+  const groupSets = await db
+    .select()
+    .from(sets)
+    .where(and(eq(sets.sessionId, sessionId), eq(sets.liftId, amrap.liftId), eq(sets.setType, "main")))
+    .orderBy(asc(sets.orderIndex));
+  if (groupSets.some((s) => s.isExtra)) throw new Error("This group already has an extra set.");
+
+  const lastOfGroup = groupSets[groupSets.length - 1];
+  const insertionIndex = lastOfGroup.orderIndex + 1;
+
+  const baseWeight = Number(amrap.actualWeight ?? amrap.targetWeight);
+  if (!Number.isFinite(baseWeight) || baseWeight <= 0) throw new Error("No weight to build a challenge from.");
+  const challengeWeight = baseWeight + CHALLENGE_INCREMENT_LBS;
+  const targetWeight = Number(amrap.targetWeight);
+  const intensity =
+    amrap.intensityPercentage != null && targetWeight > 0
+      ? (Number(amrap.intensityPercentage) * challengeWeight) / targetWeight
+      : null;
+
+  await db
+    .update(sets)
+    .set({ orderIndex: sql`${sets.orderIndex} + 1` })
+    .where(and(eq(sets.sessionId, sessionId), gte(sets.orderIndex, insertionIndex)));
+
+  const [newSet] = await db
+    .insert(sets)
+    .values({
+      sessionId,
+      liftId: amrap.liftId,
+      setType: "main",
+      orderIndex: insertionIndex,
+      isAmrap: false,
+      isExtra: true,
+      targetWeight: String(challengeWeight),
+      targetReps: Math.max(1, amrap.actualReps),
+      intensityPercentage: intensity != null ? String(Math.round(intensity * 100) / 100) : null,
+    })
+    .returning();
+
+  return newSet;
 }
