@@ -145,7 +145,6 @@ export function SetupForm({
           if (dayLifts.length === 0) return null;
           return (
             <div key={dayNumber} className="mb-4 last:mb-0">
-              <h3 className="mb-2 text-sm font-bold opacity-70">{dayLifts[0].dayName}</h3>
               <div className="flex flex-col gap-2">
                 {dayLifts.map((lift) => (
                   <label key={lift.id} className="flex items-center justify-between gap-3">
