@@ -30,6 +30,14 @@ describe("calcTotalInol", () => {
     expect(total).toBeCloseTo(expected, 5);
   });
 
+  it("excludes bonus extra sets even when completed", () => {
+    const total = calcTotalInol([
+      { actualReps: 5, intensityPercentage: "85.00", completedAt: new Date() },
+      { actualReps: 8, intensityPercentage: "85.00", completedAt: new Date(), isExtra: true },
+    ]);
+    expect(total).toBeCloseTo(5 / 15, 5);
+  });
+
   it("skips sets that aren't completed yet", () => {
     const total = calcTotalInol([
       { actualReps: 5, intensityPercentage: "65.00", completedAt: new Date() },

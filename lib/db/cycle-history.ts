@@ -57,6 +57,7 @@ export async function getCycleHistoryForUser(userId: string): Promise<CycleHisto
             sessionId: sets.sessionId,
             actualReps: sets.actualReps,
             intensityPercentage: sets.intensityPercentage,
+            isExtra: sets.isExtra,
             completedAt: sets.completedAt,
           })
           .from(sets)

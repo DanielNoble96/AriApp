@@ -10,7 +10,9 @@
  *
  * %1RM here is % of training max, since that's the actual intensity value
  * driving every weight calculation in this app. Accessory sets have no %TM
- * at all and are excluded.
+ * at all and are excluded. So are bonus ("Extra Sets") sets -- they're
+ * not part of the prescribed program, so adding them (or bumping their
+ * weight) shouldn't inflate the session's INOL.
  */
 export function calcSetInol(actualReps: number, intensityPercentage: number): number {
   if (intensityPercentage >= 100) return 0;
@@ -21,11 +23,14 @@ export interface InolSetInput {
   actualReps: number | null;
   intensityPercentage: string | null;
   completedAt: Date | null;
+  /** True for bonus sets added via "Extra Sets"; excluded from INOL. */
+  isExtra?: boolean;
 }
 
 /** Sums calcSetInol across every completed set that has a known %1RM. */
 export function calcTotalInol(sets: InolSetInput[]): number {
   return sets.reduce((total, set) => {
+    if (set.isExtra) return total;
     if (set.completedAt == null || set.actualReps == null || set.intensityPercentage == null) {
       return total;
     }
