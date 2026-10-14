@@ -505,6 +505,16 @@ export function SessionClient({
       </div>
 
       <div className="flex gap-3">
+        {(hasProgress || status !== "pending") && (
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={handleReset}
+            className={`flex-1 py-3 text-base ${DANGER_BUTTON_CLASS}`}
+          >
+            Reset Session
+          </button>
+        )}
         {status === "in_progress" && (
           <button
             type="button"
@@ -523,16 +533,6 @@ export function SessionClient({
         >
           Complete Session
         </button>
-        {(hasProgress || status !== "pending") && (
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={handleReset}
-            className={`flex-1 py-3 text-base ${DANGER_BUTTON_CLASS}`}
-          >
-            Reset Session
-          </button>
-        )}
       </div>
       {timerError && (
         <p className={`${CARD_CLASS} bg-brutal-white p-2 text-xs font-bold text-red-600`}>
