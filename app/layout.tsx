@@ -11,6 +11,7 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "Pretty Heavy",
   description: "5/3/1 training tracker",
+  appleWebApp: { capable: true, title: "Pretty Heavy", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

@@ -5,7 +5,9 @@ import { SESSION_COOKIE_NAME } from "@/lib/auth-constants";
 // Accessible without a session: login/signup (redirecting an *already*
 // signed-in visitor away from these is handled by the pages themselves via
 // getSessionUser(), not here -- see the note below) and About.
-const PUBLIC_PATHS = ["/login", "/signup", "/about"];
+// Icons and the web manifest must be fetchable without a session (iOS and
+// browsers request them without credentials when installing to a home screen).
+const PUBLIC_PATHS = ["/login", "/signup", "/about", "/icon", "/apple-icon", "/manifest.webmanifest"];
 
 // Fast-path only: presence of the cookie, not whether it's still valid.
 // Deliberately does NOT redirect an already-has-a-cookie visitor away from
