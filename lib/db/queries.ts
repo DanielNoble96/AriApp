@@ -115,3 +115,20 @@ export async function getSetsForSession(sessionId: string) {
     .where(eq(sets.sessionId, sessionId))
     .orderBy(asc(sets.orderIndex));
 }
+
+/**
+ * The user's current position in their active cycle: its number and the
+ * first week that still has an unfinished session (same rule the home page
+ * uses to open the current week), or week 3 if everything is done. Null
+ * when there's no active cycle.
+ */
+export async function getCurrentCycleWeek(
+  userId: string
+): Promise<{ cycleNumber: number; weekNumber: number } | null> {
+  const cycle = await getActiveCycle(userId);
+  if (!cycle) return null;
+  const cycleSessions = await getSessionsForCycle(cycle.id);
+  const weekNumber =
+    [1, 2, 3].find((wn) => cycleSessions.some((s) => s.weekNumber === wn && s.status !== "completed")) ?? 3;
+  return { cycleNumber: cycle.cycleNumber, weekNumber };
+}

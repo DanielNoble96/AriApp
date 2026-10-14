@@ -5,6 +5,7 @@ import { del } from "@vercel/blob";
 import { db } from "@/lib/db";
 import { diaryEntries, diaryPhotos } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { getCurrentCycleWeek } from "@/lib/db/queries";
 
 const MAX_DIARY_PHOTOS = 3;
 const MAX_NOTE_LENGTH = 600;
@@ -45,11 +46,15 @@ export async function createDiaryEntry(input: {
   if (!user) throw new Error("Not signed in.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.entryDate)) throw new Error("Pick a valid date.");
 
+  const position = await getCurrentCycleWeek(user.id);
+
   const [entry] = await db
     .insert(diaryEntries)
     .values({
       userId: user.id,
       entryDate: input.entryDate,
+      cycleNumber: position?.cycleNumber ?? null,
+      weekNumber: position?.weekNumber ?? null,
       weightLbs: cleanWeight(input.weightLbs),
       note: cleanNote(input.note),
     })

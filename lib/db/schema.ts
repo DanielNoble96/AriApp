@@ -355,6 +355,10 @@ export const diaryEntries = pgTable("diary_entries", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   entryDate: date("entry_date", { mode: "string" }).notNull(),
+  // Snapshot of where the user was in their program when the entry was
+  // written (null if they had no active cycle).
+  cycleNumber: integer("cycle_number"),
+  weekNumber: integer("week_number"),
   weightLbs: numeric("weight_lbs", { precision: 5, scale: 1 }),
   note: text("note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

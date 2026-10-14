@@ -13,7 +13,11 @@ function localToday(): string {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
-export function DiaryForm() {
+export function DiaryForm({
+  position,
+}: {
+  position: { cycleNumber: number; weekNumber: number } | null;
+}) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [entryDate, setEntryDate] = useState("");
@@ -104,6 +108,11 @@ export function DiaryForm() {
 
   return (
     <form onSubmit={handleSubmit} className={`${CARD_CLASS} flex flex-col gap-3 bg-brutal-white p-4`}>
+      {position && (
+        <p className="text-sm font-bold">
+          Cycle {position.cycleNumber} · Week {position.weekNumber}
+        </p>
+      )}
       <label className="flex items-center justify-between gap-3 text-sm font-bold">
         <span className="opacity-70">Date</span>
         <input

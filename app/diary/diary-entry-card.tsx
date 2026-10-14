@@ -9,6 +9,8 @@ import { BORDER_CLASS, SHADOW_SM_CLASS, CARD_CLASS, INPUT_CLASS, BUTTON_CLASS } 
 export interface DiaryEntryData {
   id: string;
   entryDate: string;
+  cycleNumber: number | null;
+  weekNumber: number | null;
   weightLbs: string | null;
   note: string | null;
   photos: { id: string; photoUrl: string }[];
@@ -77,6 +79,11 @@ export function DiaryEntryCard({ entry }: { entry: DiaryEntryData }) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="font-bold">{formatEntryDate(entry.entryDate)}</p>
+          {entry.cycleNumber != null && entry.weekNumber != null && (
+            <p className="text-xs font-bold opacity-70">
+              Cycle {entry.cycleNumber} · Week {entry.weekNumber}
+            </p>
+          )}
           {entry.weightLbs != null && !isEditing && (
             <p className="text-sm font-bold opacity-70">{Number(entry.weightLbs)} lb</p>
           )}

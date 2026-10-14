@@ -4,6 +4,7 @@ import { desc, eq, inArray, asc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { diaryEntries, diaryPhotos } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { getCurrentCycleWeek } from "@/lib/db/queries";
 import { PILL_CLASS } from "@/lib/ui";
 import { DiaryForm } from "./diary-form";
 import { DiaryEntryCard, type DiaryEntryData } from "./diary-entry-card";
@@ -14,6 +15,8 @@ export const dynamic = "force-dynamic";
 export default async function DiaryPage() {
   const user = await getSessionUser();
   if (!user) redirect("/login");
+
+  const position = await getCurrentCycleWeek(user.id);
 
   const entries = await db
     .select()
@@ -40,6 +43,8 @@ export default async function DiaryPage() {
   const data: DiaryEntryData[] = entries.map((e) => ({
     id: e.id,
     entryDate: e.entryDate,
+    cycleNumber: e.cycleNumber,
+    weekNumber: e.weekNumber,
     weightLbs: e.weightLbs,
     note: e.note,
     photos: photosByEntry.get(e.id) ?? [],
@@ -57,7 +62,7 @@ export default async function DiaryPage() {
         Private to you -- daily progress photos, weight, and notes.
       </p>
 
-      <DiaryForm />
+      <DiaryForm position={position} />
 
       {data.length === 0 ? (
         <p className="text-center text-sm font-bold opacity-60">No entries yet.</p>
