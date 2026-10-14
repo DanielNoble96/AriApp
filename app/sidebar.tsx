@@ -23,6 +23,7 @@ function FlowerIcon({ className }: { className?: string }) {
 
 const LINKS = [
   { href: "/cycle/setup", label: "New Cycle", bg: "bg-brutal-yellow" },
+  { href: "/diary", label: "Diary", bg: "bg-brutal-pink" },
   { href: "/profile", label: "Profile", bg: "bg-brutal-purple" },
   { href: "/about", label: "About", bg: "bg-brutal-green" },
 ];

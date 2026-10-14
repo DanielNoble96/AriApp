@@ -1,5 +1,8 @@
 import { get } from "@vercel/blob";
 import { type NextRequest, NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { diaryEntries, diaryPhotos } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
 
 /**
@@ -20,6 +23,18 @@ export async function GET(request: NextRequest) {
   const pathname = request.nextUrl.searchParams.get("pathname");
   if (!pathname) {
     return NextResponse.json({ error: "Missing pathname" }, { status: 400 });
+  }
+
+  // Diary photos are private to their owner, unlike feed photos (which are
+  // visible to friends), so these pathnames get a real ownership check.
+  if (pathname.startsWith("diary-photos/")) {
+    const photoUrl = `/api/photos?pathname=${encodeURIComponent(pathname)}`;
+    const [owned] = await db
+      .select({ id: diaryPhotos.id })
+      .from(diaryPhotos)
+      .innerJoin(diaryEntries, eq(diaryPhotos.entryId, diaryEntries.id))
+      .where(and(eq(diaryPhotos.photoUrl, photoUrl), eq(diaryEntries.userId, user.id)));
+    if (!owned) return new NextResponse("Not found", { status: 404 });
   }
 
   const result = await get(pathname, { access: "private" });

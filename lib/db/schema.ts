@@ -9,6 +9,7 @@ import {
   timestamp,
   jsonb,
   unique,
+  date,
 } from "drizzle-orm/pg-core";
 
 // A lift's role determines how its weight is calculated during a session:
@@ -342,5 +343,30 @@ export const comments = pgTable("comments", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Private progress diary -- one row per logged day, visible only to its
+// owner. Weight is in pounds. Up to 3 photos per entry (diaryPhotos),
+// enforced in actions/diary.ts.
+export const diaryEntries = pgTable("diary_entries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  entryDate: date("entry_date", { mode: "string" }).notNull(),
+  weightLbs: numeric("weight_lbs", { precision: 5, scale: 1 }),
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// photoUrl is the same /api/photos serving URL shape as postPhotos; that
+// route additionally checks ownership for diary-photos/ pathnames.
+export const diaryPhotos = pgTable("diary_photos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  entryId: uuid("entry_id")
+    .notNull()
+    .references(() => diaryEntries.id, { onDelete: "cascade" }),
+  photoUrl: text("photo_url").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

@@ -2,10 +2,12 @@ import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 import { eq, count } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { posts, postPhotos } from "@/lib/db/schema";
+import { posts, postPhotos, diaryEntries, diaryPhotos } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/auth";
 
 const MAX_PHOTOS_PER_POST = 3;
+const MAX_PHOTOS_PER_DIARY_ENTRY = 3;
+const DIARY_PAYLOAD_PREFIX = "diary:";
 
 /**
  * Issues short-lived client-upload tokens so the browser uploads photo
@@ -13,6 +15,8 @@ const MAX_PHOTOS_PER_POST = 3;
  * serverless function -- Vercel's functions have a hard ~4.5MB request body
  * cap that a plain Server Action upload runs straight into on real phone
  * photos, independent of Next.js's own (configurable) bodySizeLimit.
+ *
+ * clientPayload is a feed post id, or "diary:<entryId>" for a diary entry.
  */
 export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
@@ -24,20 +28,34 @@ export async function POST(request: Request): Promise<NextResponse> {
       onBeforeGenerateToken: async (_pathname, clientPayload) => {
         const user = await getSessionUser();
         if (!user) throw new Error("Not signed in.");
+        if (!clientPayload) throw new Error("Missing target.");
 
-        const postId = clientPayload;
-        if (!postId) throw new Error("Missing post id.");
+        if (clientPayload.startsWith(DIARY_PAYLOAD_PREFIX)) {
+          const entryId = clientPayload.slice(DIARY_PAYLOAD_PREFIX.length);
+          const [entry] = await db.select().from(diaryEntries).where(eq(diaryEntries.id, entryId));
+          if (!entry) throw new Error("Entry not found.");
+          if (entry.userId !== user.id) throw new Error("Forbidden");
 
-        const [post] = await db.select().from(posts).where(eq(posts.id, postId));
-        if (!post) throw new Error("Post not found.");
-        if (post.userId !== user.id) throw new Error("Forbidden");
+          const [{ value: existingCount }] = await db
+            .select({ value: count() })
+            .from(diaryPhotos)
+            .where(eq(diaryPhotos.entryId, entryId));
+          if (existingCount >= MAX_PHOTOS_PER_DIARY_ENTRY) {
+            throw new Error(`You can only add up to ${MAX_PHOTOS_PER_DIARY_ENTRY} photos.`);
+          }
+        } else {
+          const postId = clientPayload;
+          const [post] = await db.select().from(posts).where(eq(posts.id, postId));
+          if (!post) throw new Error("Post not found.");
+          if (post.userId !== user.id) throw new Error("Forbidden");
 
-        const [{ value: existingCount }] = await db
-          .select({ value: count() })
-          .from(postPhotos)
-          .where(eq(postPhotos.postId, postId));
-        if (existingCount >= MAX_PHOTOS_PER_POST) {
-          throw new Error(`You can only add up to ${MAX_PHOTOS_PER_POST} photos.`);
+          const [{ value: existingCount }] = await db
+            .select({ value: count() })
+            .from(postPhotos)
+            .where(eq(postPhotos.postId, postId));
+          if (existingCount >= MAX_PHOTOS_PER_POST) {
+            throw new Error(`You can only add up to ${MAX_PHOTOS_PER_POST} photos.`);
+          }
         }
 
         return {
