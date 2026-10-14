@@ -30,12 +30,30 @@ describe("calcTotalInol", () => {
     expect(total).toBeCloseTo(expected, 5);
   });
 
-  it("excludes bonus extra sets even when completed", () => {
-    const total = calcTotalInol([
-      { actualReps: 5, intensityPercentage: "85.00", completedAt: new Date() },
-      { actualReps: 8, intensityPercentage: "85.00", completedAt: new Date(), isExtra: true },
+  it("raises intensity when more weight than prescribed was lifted", () => {
+    const prescribed = calcTotalInol([
+      { actualReps: 3, intensityPercentage: "85", targetWeight: "100", actualWeight: "100", completedAt: new Date() },
     ]);
-    expect(total).toBeCloseTo(5 / 15, 5);
+    const heavier = calcTotalInol([
+      { actualReps: 3, intensityPercentage: "85", targetWeight: "100", actualWeight: "105", completedAt: new Date() },
+    ]);
+    expect(prescribed).toBeCloseTo(3 / 15, 5);
+    expect(heavier).toBeCloseTo(3 / (100 - 89.25), 5);
+    expect(heavier).toBeGreaterThan(prescribed);
+  });
+
+  it("falls back to the stored percentage when a weight is blank", () => {
+    const total = calcTotalInol([
+      { actualReps: 3, intensityPercentage: "85", targetWeight: "100", actualWeight: null, completedAt: new Date() },
+    ]);
+    expect(total).toBeCloseTo(3 / 15, 5);
+  });
+
+  it("still counts a set lifted at or above 100% of the training max", () => {
+    const total = calcTotalInol([
+      { actualReps: 1, intensityPercentage: "95", targetWeight: "100", actualWeight: "110", completedAt: new Date() },
+    ]);
+    expect(total).toBeGreaterThan(0);
   });
 
   it("skips sets that aren't completed yet", () => {
