@@ -26,7 +26,8 @@ describe("calcTotalInol", () => {
       { actualReps: 5, intensityPercentage: "75.00", completedAt: new Date() },
       { actualReps: 5, intensityPercentage: "85.00", completedAt: new Date() },
     ]);
-    const expected = 5 / 35 + 5 / 25 + 5 / 15;
+    // %TM x 0.9 = %1RM: 58.5 / 67.5 / 76.5
+    const expected = 5 / (100 - 58.5) + 5 / (100 - 67.5) + 5 / (100 - 76.5);
     expect(total).toBeCloseTo(expected, 5);
   });
 
@@ -37,8 +38,8 @@ describe("calcTotalInol", () => {
     const heavier = calcTotalInol([
       { actualReps: 3, intensityPercentage: "85", targetWeight: "100", actualWeight: "105", completedAt: new Date() },
     ]);
-    expect(prescribed).toBeCloseTo(3 / 15, 5);
-    expect(heavier).toBeCloseTo(3 / (100 - 89.25), 5);
+    expect(prescribed).toBeCloseTo(3 / (100 - 76.5), 5);
+    expect(heavier).toBeCloseTo(3 / (100 - 89.25 * 0.9), 5);
     expect(heavier).toBeGreaterThan(prescribed);
   });
 
@@ -46,7 +47,7 @@ describe("calcTotalInol", () => {
     const total = calcTotalInol([
       { actualReps: 3, intensityPercentage: "85", targetWeight: "100", actualWeight: null, completedAt: new Date() },
     ]);
-    expect(total).toBeCloseTo(3 / 15, 5);
+    expect(total).toBeCloseTo(3 / (100 - 76.5), 5);
   });
 
   it("still counts a set lifted at or above 100% of the training max", () => {
@@ -61,7 +62,7 @@ describe("calcTotalInol", () => {
       { actualReps: 5, intensityPercentage: "65.00", completedAt: new Date() },
       { actualReps: null, intensityPercentage: "85.00", completedAt: null },
     ]);
-    expect(total).toBeCloseTo(5 / 35, 5);
+    expect(total).toBeCloseTo(5 / (100 - 58.5), 5);
   });
 
   it("skips accessory sets with no intensity percentage", () => {
@@ -75,14 +76,24 @@ describe("calcTotalInol", () => {
     expect(calcTotalInol([])).toBe(0);
   });
 
-  it("matches the worked example: 4 sets x 4 reps @ 85% = 1.06", () => {
+  it("matches the standard formula: 5 sets x 3 reps @ 80% 1RM = 0.75", () => {
+    // 80% of 1RM is 88.89% of a training max that's 90% of 1RM
+    const sets = Array.from({ length: 5 }, () => ({
+      actualReps: 3,
+      intensityPercentage: String(80 / 0.9),
+      completedAt: new Date(),
+    }));
+    expect(calcTotalInol(sets)).toBeCloseTo(0.75, 5);
+  });
+
+  it("only counts main work sets when set types are provided", () => {
+    const now = new Date();
     const total = calcTotalInol([
-      { actualReps: 4, intensityPercentage: "85", completedAt: new Date() },
-      { actualReps: 4, intensityPercentage: "85", completedAt: new Date() },
-      { actualReps: 4, intensityPercentage: "85", completedAt: new Date() },
-      { actualReps: 4, intensityPercentage: "85", completedAt: new Date() },
+      { setType: "warmup", actualReps: 5, intensityPercentage: "50", completedAt: now },
+      { setType: "main", actualReps: 5, intensityPercentage: "85", completedAt: now },
+      { setType: "assistance", actualReps: 10, intensityPercentage: "50", completedAt: now },
     ]);
-    expect(total).toBeCloseTo(1.0667, 3);
+    expect(total).toBeCloseTo(5 / (100 - 76.5), 5);
   });
 });
 

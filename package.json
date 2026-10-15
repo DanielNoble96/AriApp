@@ -19,6 +19,7 @@
     "db:backfill-classic-531": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-classic-531.ts",
     "db:backfill-regenerate-noncompleted-sessions": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-regenerate-noncompleted-sessions.ts",
     "db:backfill-day-names": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-day-names.ts",
+    "db:backfill-recompute-inol": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-recompute-inol.ts",
     "db:backfill-add-assistance-work": "node --env-file=.env.local node_modules/tsx/dist/cli.mjs lib/db/backfill-add-assistance-work.ts"
   },
   "dependencies": {
