@@ -137,7 +137,7 @@ export function SetupForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6 pb-24">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6 pb-32">
       <section className={`${CARD_CLASS} ${CANDY_BG_CLASSES[0]} p-4`}>
         <h2 className="mb-3 text-xl font-bold">Training Maxes</h2>
         {dayNumbers.map((dayNumber) => {
@@ -279,7 +279,7 @@ export function SetupForm({
       <button
         type="submit"
         disabled={isPending}
-        className={`fixed inset-x-0 bottom-0 mx-auto w-full max-w-md py-4 text-center text-lg ${BUTTON_CLASS}`}
+        className={`fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 z-10 mx-auto max-w-md py-4 text-center text-lg ${BUTTON_CLASS}`}
       >
         {isPending ? "Starting..." : "Start Cycle"}
       </button>
