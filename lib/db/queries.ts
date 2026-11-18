@@ -1,9 +1,10 @@
 import { eq, and, asc, desc } from "drizzle-orm";
 import { db } from "./index";
+import { getSwapPool } from "@/lib/lift-swaps";
 import { lifts, programDays, cycles, sessions, sets, accessoryDayEntries } from "./schema";
 
 export async function getLiftsForUser(userId: string) {
-  return db
+  const rows = await db
     .select({
       id: lifts.id,
       slug: lifts.slug,
@@ -21,6 +22,14 @@ export async function getLiftsForUser(userId: string) {
     .innerJoin(programDays, eq(lifts.programDayId, programDays.id))
     .where(eq(lifts.userId, userId))
     .orderBy(asc(programDays.dayNumber), asc(lifts.orderInDay));
+
+  // Each day's main lift is "main" no matter what an older row says --
+  // accounts predating the classic 5/3/1 collapse still had Deadlift and
+  // Overhead Press stored as "assistance", which made cycle creation demand
+  // assistance percentages that no longer exist.
+  return rows.map((l) =>
+    !l.isSwapOnly && getSwapPool(l.dayNumber, "main")[0] === l.slug ? { ...l, role: "main" as const } : l
+  );
 }
 
 /** dayNumber -> display name (the day's main lift) for the user. */
